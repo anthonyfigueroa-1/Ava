@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backed = "setuptools.build_meta"
+
+[project]
+name = "AI-Responder"
+description = "Generate responses for tickets coming in from Freshservice and leave ticket notes for next steps for agents."
+version = "0.1"
+requires-python = ">=3.12"
+
+[project.scripts]
+air = "app.main:main"
