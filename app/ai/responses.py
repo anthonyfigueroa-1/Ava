@@ -1,6 +1,7 @@
 from openai import OpenAI
 import os, json
 
+from app.logs import logs
 from app.regex import seperate_responses
 
 script = """You are an East West Workspace Tier-1 IT help-desk assistant.
@@ -52,15 +53,21 @@ If ticket is coming from TECH GLOBAL, there is a good chance that is a project s
 You are an IT assistant, which you already know but there is a different team under the tech umbrella at East West, it is Business Applications. 
 There are certain things they support, such as Track, SlimCD. If it is something I said they support let the user know that this is an issue the Business Applications team can assist on and on ticket notes just let the agent know to move to ticket over to their queue.
 
-When looking at the json, focus mainly on the subject and description_text sections, use the other info as needed, if it'll help with writing a better email back to the user or leaving a better ticket note.
+When looking at the json, focus mainly on the subject and description sections, use the other info as needed, if it'll help with writing a better email back to the user or leaving a better ticket note.
+
+For the email only, use HTML to ensure that formatting is neat and correct for the email part of your response.
+
+Note the conversations and last_ai_gen fields and build off of that. Note the id the last_ai_gen message email was sent from to know what messages you have previosly sent in the tickets. If there is a newer message in the conversations field, reply to that rather than the subject and description of the main ticket json. If this is not a first response, respond back to the user differently than previously instructed, as well as you do not need to always ask for 3 exact bullet points of data."
+Note that in the conversations field, conversations will not be in order so the timestamp must be looked at for each entry in the conversations json. Note the latest comments from the user or users of the ticket to tailor you response to, if it is a response and not first_response to the ticket.
+
+This is a temp. prompt I will be running a test with my own account. Because of this the id for the messages will be the same but you'll notice I will have my signature in mine. So defferintiate off that.
 """
 
 def first_response(ticket):
     key = os.environ["OPENAIKEY"]
     client = OpenAI(api_key=key)
 
-    subject = ticket.get("subject")
-    description = ticket.get("description_text")
+    logs(f"Generating response for ticket ID# {ticket.get("id")}")
 
     response = client.responses.create(
             model="gpt-5",
@@ -68,5 +75,7 @@ def first_response(ticket):
             input=f"{json.dumps(ticket)}")
 
     responses = seperate_responses(response.output_text)
+
+    logs(f"Response generated.")
 
     return responses

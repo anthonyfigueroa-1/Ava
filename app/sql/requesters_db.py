@@ -1,4 +1,4 @@
-import psycopg
+import psycopg, json
 
 db = "postgresql://anthony:Pock!00!@localhost:5432/air"
 
@@ -39,11 +39,22 @@ def query_name_requesters_table(id):
         with conn.cursor() as cur:
             cur.execute("SELECT first_name, last_name FROM requesters WHERE id = %s", (id,))
             full_name = cur.fetchone()
-            if full_name:
-                #This if checks to make sure if there is a last name, if last name is not None/NULL, it will combine the tuple values into one and return both first and last name.
-                if full_name[1]:    
-                    full_name = " ".join(map(str, full_name))
-                    return full_name
-                else:
-                    full_name = full_name[0]
-                    return full_name
+        if full_name:
+            #This if checks to make sure if there is a last name, if last name is not None/NULL, it will combine the tuple values into one and return both first and last name.
+            if full_name[1]:    
+                full_name = " ".join(map(str, full_name))
+                return full_name
+            else:
+                full_name = full_name[0]
+                return full_name
+
+def query_requester(id):
+    with psycopg.connect(db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT row_to_json(t) FROM requesters AS t WHERE id = %s", (id,))
+            data = cur.fetchone()
+
+        if data:
+            return data[0]
+        else:
+            return None
