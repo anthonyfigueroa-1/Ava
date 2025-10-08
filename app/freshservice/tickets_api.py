@@ -22,6 +22,6 @@ def get_one_ticket(ticket_id):
     ticket = response.json()["ticket"]
 
     if response.status_code == 200:
-        logs(f"Got ticket {ticket_id}")
+        logs(f"Got ticket ID# {ticket_id}")
 
     return ticket

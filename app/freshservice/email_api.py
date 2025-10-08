@@ -1,6 +1,7 @@
 import os, requests
 from requests.auth import HTTPBasicAuth
 from app.logs import logs
+from app.sql.tickets_db import add_time_last_ai_message_post
 
 def post_email(ticket_id, ai_response):
     url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}/reply"
@@ -15,5 +16,9 @@ def post_email(ticket_id, ai_response):
 
     response = requests.post(json=payload, headers=header, url=url, auth=HTTPBasicAuth(key, "x"))
 
-    if response.status_code in (200, 406):
+    print(response.status_code)
+
+    if response.status_code == 201:
         logs(f"Successfully posted AI email to ticket ID# {ticket_id}")
+
+        add_time_last_ai_message_post(ticket_id)

@@ -1,20 +1,45 @@
-from app.sql.tickets_db import query_ai_response
-def filter_tickets(tickets):
+from app.sql.tickets_db import query_ticket_class
+from app.classes.ticket import Ticket
+from app.logs import logs
+import time
+
+def filter_initial_tickets(tickets):
     filtered_tickets = []
     
+    logs("Querying tickets in tickets database for filtering")
     for ticket in tickets:
         id = ticket.get("id")
-        ai_response = query_ai_response(id)
-        responses = True
-        #Checks values of the tuple that was grabbed from the tickets DB and the program will check if there is an entry for first_response and for private_note. If one does not exist, it will be appended to filtered tickets.
-        if ai_response:
-            if ai_response[0] is None or ai_response[1] is None:
-                responses = False
-        #Cannot process ai_response if both are of None type so doing this to check otherwise.
-        if ai_response is None:
-            responses = False
+        ticket_class =  query_ticket_class(id)
+        time = ticket_class.time_last_ai_message_post
+        attempts = ticket_class.ai_attempts
+        recieved = ticket_class.ticket_created
+        
+        #Math to find out if enough time has passed to send message
+        now = time.time()
+        time_dif = now - recieved
+        #10 minutes in seconds
+        tenmin = 60 * 10
 
-        if responses == False:
+        if time is None and attempts > 0 and attempts <= 5 and time_dif > tenmin:
             filtered_tickets.append(ticket)
 
     return filtered_tickets
+
+def filter_initial_ticket_test(ticket):
+    id = ticket.get("id")
+    logs("Querying ticket for filtering")
+    ticket_class =  query_ticket_class(id)
+    time_message_post = ticket_class.time_last_ai_message_post
+    attempts = ticket_class.ai_attempts
+    recieved = ticket_class.ticket_created
+
+    #Math to find out if enough time has passed to send message
+    now = int(time.time())
+    time_dif = now - recieved
+    #10 minutes in seconds
+    tenmin = 60 * 10
+
+    if time_message_post is None and attempts > 0 and attempts <= 5 and time_dif > tenmin:
+        return ticket
+    else:
+        return None

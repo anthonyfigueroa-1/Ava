@@ -1,6 +1,6 @@
-import psycopg, json
+import psycopg, os
 
-db = "postgresql://anthony:Pock!00!@localhost:5432/air"
+db = os.getenv("DB")
 
 def create_requesters_table():
     with psycopg.connect(db) as conn:
