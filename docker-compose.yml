@@ -1,0 +1,12 @@
+services:
+  air:
+    image: air:latest
+    build: .
+    container_name: air
+    environment:
+      PYTHONUNBUFFERED: 1
+    env_file:
+      - ./.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

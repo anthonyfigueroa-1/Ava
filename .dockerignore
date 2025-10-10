@@ -1,0 +1,10 @@
+.git
+.venv
+AI_Responder.egg-info/
+app/
+.dockerignore
+.env
+.gitignore
+docker-compose.uml
+dockerfile
+pyproject.toml

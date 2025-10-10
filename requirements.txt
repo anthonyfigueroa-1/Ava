@@ -1,0 +1,5 @@
+psycopg
+psycopg_binary
+requests
+openai
+python-dotenv

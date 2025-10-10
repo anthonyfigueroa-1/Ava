@@ -6,28 +6,47 @@ import time
 def filter_initial_tickets(tickets):
     filtered_tickets = []
     
-    logs("Querying tickets in tickets database for filtering")
+    logs("Querying ticket for AI response filtering")
     for ticket in tickets:
         id = ticket.get("id")
         ticket_class =  query_ticket_class(id)
-        time = ticket_class.time_last_ai_message_post
+        time_message_post = ticket_class.time_last_ai_message_post
         attempts = ticket_class.ai_attempts
         recieved = ticket_class.ticket_created
-        
+
         #Math to find out if enough time has passed to send message
-        now = time.time()
+        now = int(time.time())
         time_dif = now - recieved
         #10 minutes in seconds
         tenmin = 60 * 10
 
-        if time is None and attempts > 0 and attempts <= 5 and time_dif > tenmin:
+        #Removing 10 minute wait per Ryan's request.
+        if (attempts is None or (attempts > 0 and attempts <= 5)):
             filtered_tickets.append(ticket)
 
     return filtered_tickets
 
-def filter_initial_ticket_test(ticket):
+def filter_post_to_fs(tickets):
+    filtered_tickets = []
+
+    logs("Querying ticket for posting AI response to FS filtering")
+    for ticket in tickets:
+        id = ticket.get("id")
+        ticket_class =  query_ticket_class(id)
+
+        post_note = ticket_class.post_note
+        post_email = ticket_class.post_email
+        put_fields = ticket_class.put_fields
+        ai_attempts = ticket_class.ai_attempts
+
+        if ((post_email is None or (post_email > 0 and post_email <= 3)) or (post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))) and (ai_attempts == 0):
+            filtered_tickets.append(ticket)
+
+    return filtered_tickets
+
+def filter_ai_response_test(ticket):
     id = ticket.get("id")
-    logs("Querying ticket for filtering")
+    logs("Querying ticket for AI response filtering")
     ticket_class =  query_ticket_class(id)
     time_message_post = ticket_class.time_last_ai_message_post
     attempts = ticket_class.ai_attempts
@@ -39,7 +58,22 @@ def filter_initial_ticket_test(ticket):
     #10 minutes in seconds
     tenmin = 60 * 10
 
-    if time_message_post is None and attempts > 0 and attempts <= 5 and time_dif > tenmin:
+    #Removing 10 minute wait per Ryan's request.
+    if (attempts is None or (attempts > 0 and attempts <= 5)):
+        return ticket
+    else:
+        return None
+
+def filter_post_to_fs_test(ticket):
+    id = ticket.get("id")
+    logs("Querying ticket for posting AI response to FS filtering")
+    ticket_class =  query_ticket_class(id)
+
+    post_note = ticket_class.post_note
+    post_email = ticket_class.post_email
+    put_fields = ticket_class.put_fields
+
+    if ((post_email is None or (post_email > 0 and post_email <= 3)) or (post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))):
         return ticket
     else:
         return None

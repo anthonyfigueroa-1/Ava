@@ -1,9 +1,11 @@
 import os, requests
 from requests.auth import HTTPBasicAuth
 from app.logs import logs
+from app.sql.tickets_db import add_post_note, query_ticket_class
+from app.classes.ticket import Ticket
 
 def post_private_note(ticket_id, ai_response):
-    url = f"https://eastwest.freshservice.com/api/v2/{ticket_id}/notes"
+    url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}/notes"
     key = os.environ["FSKEY"]
 
     header = {
@@ -17,4 +19,20 @@ def post_private_note(ticket_id, ai_response):
     response = requests.post(url=url, json=payload, headers=header, auth=HTTPBasicAuth(key, 'X'))
 
     if response.status_code == 201:
-        logs(f"Succeffully posted private ticket note to ticket ID# {ticket_id}") 
+        attempt = 0
+        logs(f"Successfully posted AI note to ticket ID# {ticket_id}")
+        add_post_note(attempt, ticket_id)
+
+    else:
+        logs(f"Failed to post AI note to ticket ID# {ticket_id} with status code of {response.status_code}")
+        logs(f"Querying ticket {ticket_id} for post_note")
+        ticket = query_ticket_class(ticket_id)
+        attempts = ticket.post_note
+
+        if attempts is None:
+            attempts = 1
+            add_post_note(attempts, ticket_id)
+
+        else:
+            attempts += 1
+            add_post_note(attempts, ticket_id)

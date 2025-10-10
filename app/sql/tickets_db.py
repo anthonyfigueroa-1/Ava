@@ -25,6 +25,9 @@ def create_tickets_table():
                 ticket_created BIGINT,
                 time_last_message_recieved BIGINT,
                 time_last_ai_message_post BIGINT,
+                post_email BIGINT,
+                post_note BIGINT,
+                put_fields BIGINT,
                 closed BOOLEAN,
                 json TEXT)""")
 
@@ -67,7 +70,7 @@ def add_ai_response(ai_response, attempts, id):
 def add_conversations(conversations, id):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE tickets SET conversations = %s WHERE id = %s", (json.dumps(conversations, indent=4), id))
+            cur.execute("UPDATE tickets SET conversations = %s WHERE id = %s", (json.dumps(conversations), id))
 
     logs(f"Updated ticket ID# {id} conversations field")
 
@@ -79,6 +82,27 @@ def add_time_last_ai_message_post(id):
             cur.execute("UPDATE tickets SET time_last_ai_message_post = %s WHERE id = %s", (unix_time, id))
 
     logs(f"Updated ticket ID# {id} time_last_ai_message_post field")
+
+def add_post_email(attempts, id):
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tickets SET post_email = %s WHERE id = %s", (attempts, id))
+
+    logs(f"Updated ticket ID# {id} post_email field")
+
+def add_post_note(attempts, id):
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tickets SET post_note = %s WHERE id = %s", (attempts, id))
+
+    logs(f"Updated ticket ID# {id} post_note field")
+
+def add_put_fields(attempts, id):
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tickets SET put_fields = %s WHERE id = %s", (attempts, id))
+
+    logs(f"Updated ticket ID# {id} put_fields field")
 
 def query_ai_response(id):
     with psycopg.connect(tickets_db) as conn:
@@ -108,7 +132,7 @@ def query_ticket(id):
         data = data[0]
         #getting rid of json as it is not needed
         data["json"] = None
-        logs(f"Found ticket ID# {id} in tickets table, returning row")
+        logs(f"Found ticket ID# {id} in tickets table, returning row as a json")
     else:
         data = None
         logs(f"Was not able to find ticket ID# {id} in tickets table")
@@ -136,6 +160,9 @@ def query_ticket_class(id):
                 data.get("ticket_created"),
                 data.get("time_last_message_recieved"),
                 data.get("time_last_ai_message_post"),
+                data.get("post_email"),
+                data.get("post_note"),
+                data.get("put_fields"),
                 data.get("closed"))
 
         return ticket

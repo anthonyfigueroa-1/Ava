@@ -10,12 +10,12 @@ def get_tickets():
     tickets = response.json()["tickets"]
 
     if response.status_code == 200:
-        logs("Got batch of tickets")
+        logs("Got batch of tickets for group ALL IT")
 
     return tickets
 
 def get_one_ticket(ticket_id):
-    url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}"
+    url = f'https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}/filter?query="group_id:{os.environ["ITGROUP"]}"'
     key = os.environ["FSKEY"]
 
     response = requests.get(url, auth=HTTPBasicAuth(key, "X"))
