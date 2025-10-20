@@ -19,6 +19,7 @@ def create_tickets_table():
                 department TEXT,
                 subject TEXT,
                 description TEXT,
+                raw_description TEXT,
                 last_ai_gen TEXT,
                 ai_attempts BIGINT,
                 conversations TEXT,
@@ -37,6 +38,7 @@ def add_tickets_table(ticket):
     description = ticket.get("description_text")
     requester_name = query_name_requesters_table(ticket.get("requester_id"))
     department = query_departments_table(ticket.get("department_id"))
+    raw_description = ticket.get("description")
 
     #enter time as UNIX time
     time = datetime.strptime(ticket.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
@@ -53,26 +55,24 @@ def add_tickets_table(ticket):
         with conn.cursor() as cur:
             try:
                 cur.execute("""INSERT INTO tickets 
-                            (id, requester_name, requester_email, department, subject, description, ticket_created, json) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s);""",
-                            (id, requester_name, requester_email, department, subject, description, unixtime, json.dumps(ticket)))
+                            (id, requester_name, requester_email, department, subject, description, raw_description, ticket_created, json) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""",
+                            (id, requester_name, requester_email, department, subject, description, raw_description, unixtime, json.dumps(ticket)))
                 logs(f"Ticket ID# {id} added tickets table")
             except psycopg.errors.UniqueViolation:
-                logs(f"Ticket ID# {id} already in tickets table")
+                pass
 
 def add_ai_response(ai_response, attempts, id):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
             cur.execute("UPDATE tickets SET last_ai_gen = %s, ai_attempts = %s WHERE id = %s;",
-                        (ai_response, attempts, id))
+                        (json.dumps(ai_response), attempts, id))
     logs(f"Updated ticket ID# {id} last_ai_gen and ai_attempts fields")
 
 def add_conversations(conversations, id):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
             cur.execute("UPDATE tickets SET conversations = %s WHERE id = %s", (json.dumps(conversations), id))
-
-    logs(f"Updated ticket ID# {id} conversations field")
 
 def add_time_last_ai_message_post(id):
     unix_time = dtime.time()
@@ -132,7 +132,6 @@ def query_ticket(id):
         data = data[0]
         #getting rid of json as it is not needed
         data["json"] = None
-        logs(f"Found ticket ID# {id} in tickets table, returning row as a json")
     else:
         data = None
         logs(f"Was not able to find ticket ID# {id} in tickets table")

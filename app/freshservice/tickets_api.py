@@ -3,7 +3,7 @@ from requests.auth import HTTPBasicAuth
 from app.logs import logs
 
 def get_tickets():
-    url = "https://eastwest.freshservice.com/api/v2/tickets"
+    url = f'https://eastwest.freshservice.com/api/v2/tickets/filter?query="group_id:{os.environ["ITGROUP"]}"' 
     key = os.environ["FSKEY"]
 
     response = requests.get(url, auth=HTTPBasicAuth(key, "X"))
@@ -15,7 +15,7 @@ def get_tickets():
     return tickets
 
 def get_one_ticket(ticket_id):
-    url = f'https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}/filter?query="group_id:{os.environ["ITGROUP"]}"'
+    url = f'https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}'
     key = os.environ["FSKEY"]
 
     response = requests.get(url, auth=HTTPBasicAuth(key, "X"))

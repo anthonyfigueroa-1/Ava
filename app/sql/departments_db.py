@@ -26,6 +26,10 @@ def query_departments_table(id):
         with conn.cursor() as cur:
             cur.execute("SELECT name FROM departments WHERE id = %s", (id,))
             data = cur.fetchone()
-            name = data[0]
 
-            return name
+            if data:
+                name = data[0]
+
+                return name
+            else:
+                return None

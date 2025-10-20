@@ -24,13 +24,15 @@ def add_requesters_table(requester):
     primary_email = requester.get("primary_email")
     work_phone_number = requester.get("work_phone_number")
     mobile_phone_number = requester.get("mobile_phone_number")
+    department_ids = requester.get("department_ids")
+    reporting_manager_id = requester.get("reporting_manager_id")
 
     with psycopg.connect(db) as conn:
         with conn.cursor() as cur:
             try:
-                cur.execute("""INSERT INTO requesters (id, is_agent, first_name, last_name, primary_email, work_phone_number, mobile_phone_number)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                            (id, is_agent, first_name, last_name, primary_email, work_phone_number, mobile_phone_number))
+                cur.execute("""INSERT INTO requesters (id, is_agent, first_name, last_name, primary_email, work_phone_number, mobile_phone_number, department_ids, reporting_manager_id)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                            (id, is_agent, first_name, last_name, primary_email, work_phone_number, mobile_phone_number, department_ids, reporting_manager_id))
             except psycopg.errors.UniqueViolation:
                 return
 

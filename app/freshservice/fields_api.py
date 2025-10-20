@@ -1,9 +1,20 @@
-import requests, os
+import requests, os, json
 from requests.auth import HTTPBasicAuth
-from app.sql.tickets_db import add_put_fields, query_ticket_class
+from app.sql.tickets_db import add_put_fields, query_ticket
 from app.classes.ticket import Ticket
 
 def put_fields(ticket_id):
+    ticket = query_ticket(ticket_id)
+    ticket_json = ticket.get("json")
+    ticket_json = json.loads(ticket_json)
+    tags = ticket_json.get("tags", None)
+    responder_id = ticket_json.get("responder_id", None)
+    
+    if not tags:
+        tags = ["T1", "AI"]
+    else:
+        tags.append("AI")
+
     url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}"
     key = os.environ["FSKEY"]
 
@@ -12,8 +23,8 @@ def put_fields(ticket_id):
             }
 
     payload = {
-            "responder_id": None,
-            "tags": ["T1", "AI"]
+            "responder_id": responder_id,
+            "tags": tags
             }
 
     response = requests.put(url=url, headers=header, json=payload, auth=HTTPBasicAuth(key, "X"))
@@ -22,8 +33,7 @@ def put_fields(ticket_id):
         add_put_fields(0, ticket_id)
 
     else:
-        ticket = query_ticket_class(ticket_id)
-        attempts = ticket.put_fields
+        attempts = ticket.get("put_fields")
 
         if not attempts:
             attempts = 1

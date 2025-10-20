@@ -12,7 +12,7 @@ def post_email(ticket_id, ai_response):
             "Content-Type": "application/json"
             }
     payload = {
-            "body": ai_response[0]
+            "body": ai_response
             }
 
     response = requests.post(json=payload, headers=header, url=url, auth=HTTPBasicAuth(key, "x"))

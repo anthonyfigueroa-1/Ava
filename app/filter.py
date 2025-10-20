@@ -1,4 +1,4 @@
-from app.sql.tickets_db import query_ticket_class
+from app.sql.tickets_db import query_ticket_class, query_ticket
 from app.classes.ticket import Ticket
 from app.logs import logs
 import time
@@ -9,10 +9,11 @@ def filter_initial_tickets(tickets):
     logs("Querying ticket for AI response filtering")
     for ticket in tickets:
         id = ticket.get("id")
-        ticket_class =  query_ticket_class(id)
-        time_message_post = ticket_class.time_last_ai_message_post
-        attempts = ticket_class.ai_attempts
-        recieved = ticket_class.ticket_created
+        ticket_class = query_ticket(id)
+
+        time_message_post = ticket_class.get("time_last_ai_message_post")
+        attempts = ticket_class.get("ai_attempts")
+        recieved = ticket_class.get("ticket_created")
 
         #Math to find out if enough time has passed to send message
         now = int(time.time())
@@ -32,14 +33,15 @@ def filter_post_to_fs(tickets):
     logs("Querying ticket for posting AI response to FS filtering")
     for ticket in tickets:
         id = ticket.get("id")
-        ticket_class =  query_ticket_class(id)
+        ticket_class = query_ticket(id)
 
-        post_note = ticket_class.post_note
-        post_email = ticket_class.post_email
-        put_fields = ticket_class.put_fields
-        ai_attempts = ticket_class.ai_attempts
+        post_note = ticket_class.get("post_note")
+        post_email = ticket_class.get("post_email")
+        put_fields = ticket_class.get("put_fields")
+        ai_attempts = ticket_class.get("ai_attempts")
 
-        if ((post_email is None or (post_email > 0 and post_email <= 3)) or (post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))) and (ai_attempts == 0):
+        #removed from filter below for testing((post_email is None or (post_email > 0 and post_email <= 3)) or 
+        if ((post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))) and (ai_attempts == 0):
             filtered_tickets.append(ticket)
 
     return filtered_tickets
@@ -47,10 +49,10 @@ def filter_post_to_fs(tickets):
 def filter_ai_response_test(ticket):
     id = ticket.get("id")
     logs("Querying ticket for AI response filtering")
-    ticket_class =  query_ticket_class(id)
-    time_message_post = ticket_class.time_last_ai_message_post
-    attempts = ticket_class.ai_attempts
-    recieved = ticket_class.ticket_created
+    ticket =  query_ticket(id)
+    time_message_post = ticket.get("time_last_ai_message_post")
+    attempts = ticket.get("ai_attempts")
+    recieved = ticket.get("ticket_created")
 
     #Math to find out if enough time has passed to send message
     now = int(time.time())
@@ -67,13 +69,14 @@ def filter_ai_response_test(ticket):
 def filter_post_to_fs_test(ticket):
     id = ticket.get("id")
     logs("Querying ticket for posting AI response to FS filtering")
-    ticket_class =  query_ticket_class(id)
+    ticket = query_ticket(id)
 
-    post_note = ticket_class.post_note
-    post_email = ticket_class.post_email
-    put_fields = ticket_class.put_fields
+    post_note = ticket.get("post_note")
+    post_email = ticket.get("post_email")
+    put_fields = ticket.get("put_fields")
+    ai_attempts = ticket.get("ai_attempts")
 
-    if ((post_email is None or (post_email > 0 and post_email <= 3)) or (post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))):
+    if ((post_email is None or (post_email > 0 and post_email <= 3)) or (post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))) and (ai_attempts == 0):
         return ticket
     else:
         return None

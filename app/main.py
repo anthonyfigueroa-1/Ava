@@ -10,13 +10,13 @@ from app.sql.tickets_db import create_tickets_table, add_tickets_table, add_ai_r
 from app.sql.departments_db import create_departments_table, query_departments_table
 from app.sql.requesters_db import create_requesters_table
 from app.ai.responses import first_response
-from app.logs import logs
+from app.logs import logs, new_log_file
 from app.regex import seperate_responses
 from app.filter import filter_initial_tickets, filter_ai_response_test, filter_post_to_fs, filter_post_to_fs_test
 from app.arg_parse import parse_args
 from app.classes.ticket import Ticket
 
-import sys, time
+import sys, time, json
 
 def main():
     #functions to create the database and the tables for the databases
@@ -25,6 +25,9 @@ def main():
     create_departments_table()
     create_requesters_table()
     logs("All tables were either successfully created or already existed in database.")
+
+    new_log_file()
+    logs("Creating new log file for this session")
 
     #Create arg parse to test individual tickets. 
     args = parse_args()
@@ -43,8 +46,7 @@ def main():
         if filter_ai_response:
             logs(f"Ticket ID# {arg_id} passed generate ai response filter")
 
-            #Use ticket database row info to feed into openai to avoid bloat. Feeding in as json still.
-            ticket = query_ticket(arg_id)
+            #moving query_ticket() to ai_response
 
             responses = first_response(ticket)
 
@@ -57,20 +59,18 @@ def main():
         if filter_post_fs:
             logs(f"Ticket ID# {arg_id} passed post to FS filter")
 
-            ticket_class = query_ticket_class(arg_id)
+            ticket = query_ticket(arg_id)
 
-            responses = ticket_class.last_ai_gen
-            email_post = ticket_class.post_email
-            note_post = ticket_class.post_note
-            field_put = ticket_class.put_fields
-
-            responses = seperate_responses(responses)
+            responses = json.loads(ticket.get("last_ai_gen"))
+            email_post = ticket.get("post_email")
+            note_post = ticket.get("post_note")
+            field_put = ticket.get("put_fields")
 
             if email_post is None or (email_post > 0 and email_post <= 3):
-                post_email(arg_id, responses)
+                post_email(arg_id, responses.get("email"))
             
             if note_post is None or (note_post > 0 and note_post <= 3):
-                post_private_note(arg_id, responses)
+                post_private_note(arg_id, responses.get("note"))
 
             if field_put is None or (field_put > 0 and field_put <= 3):
                 put_fields(arg_id) 
@@ -90,6 +90,7 @@ def main():
         #Request functions for GET API's from Freshservice
         tickets = get_tickets()
 
+        logs("Working on ticket batch. Getting requester and updating DB, adding tickets metadata to DB, and updating conversations field of the DB")
         for ticket in tickets:
             id = ticket.get("id")
 
@@ -137,18 +138,20 @@ def main():
                 id = ticket.get("id")
                 logs(f"Working on updating ticket in FreshService for ticket ID# {id}")
 
-                ticket_class = query_ticket_class(id)
+                ticket_class = query_ticket(id)
                 
-                responses = ticket_class.last_ai_gen
-                email_post = ticket_class.post_email
-                note_post = ticket_class.post_note
-                field_put = ticket_class.put_fields
+                responses = json.loads(ticket_class.get("last_ai_gen"))
+                email_post = ticket_class.get("post_email")
+                note_post = ticket_class.get("post_note")
+                field_put = ticket_class.get("put_fields")
 
-                responses = seperate_responses(responses)
+                email = responses.get("email")
+                note = responses.get("note")
 
-                if email_post is None or (email_post > 0 and email_post <= 3):
-                    post_email(id, responses)
+#                if email_post is None or (email_post > 0 and email_post <= 3):
+#                    post_email(id, email)
                 
+                #This has been edited for demoing, would otherwise only post note but using for testing and just dumping the response json into the note field of the ticket.
                 if note_post is None or (note_post > 0 and note_post <= 3):
                     post_private_note(id, responses)
 
@@ -161,6 +164,10 @@ def main():
 
         else:
             logs("No tickets need updating on FreshService right now")
+
+        n = 5
+        logs(f"Sleeping for {n} seconds")
+        time.sleep(n)
 
 def runner():
     #Just starts the script and ends without dumping an error when exiting using Ctrl+c.

@@ -5,6 +5,10 @@ services:
     container_name: air
     environment:
       PYTHONUNBUFFERED: 1
+    logging:
+      driver: "json-file"
+    volumes:
+      - .:/logs
     env_file:
       - ./.env
     extra_hosts:
