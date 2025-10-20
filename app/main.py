@@ -10,7 +10,7 @@ from app.sql.tickets_db import create_tickets_table, add_tickets_table, add_ai_r
 from app.sql.departments_db import create_departments_table, query_departments_table
 from app.sql.requesters_db import create_requesters_table
 from app.ai.responses import first_response
-from app.logs import logs, new_log_file
+from app.logs import logs 
 from app.regex import seperate_responses
 from app.filter import filter_initial_tickets, filter_ai_response_test, filter_post_to_fs, filter_post_to_fs_test
 from app.arg_parse import parse_args
@@ -25,9 +25,6 @@ def main():
     create_departments_table()
     create_requesters_table()
     logs("All tables were either successfully created or already existed in database.")
-
-    new_log_file()
-    logs("Creating new log file for this session")
 
     #Create arg parse to test individual tickets. 
     args = parse_args()
@@ -66,11 +63,12 @@ def main():
             note_post = ticket.get("post_note")
             field_put = ticket.get("put_fields")
 
-            if email_post is None or (email_post > 0 and email_post <= 3):
-                post_email(arg_id, responses.get("email"))
+            #if email_post is None or (email_post > 0 and email_post <= 3):
+            #    post_email(arg_id, responses.get("email"))
             
             if note_post is None or (note_post > 0 and note_post <= 3):
-                post_private_note(arg_id, responses.get("note"))
+                #Otherwise had responses.get("note")
+                post_private_note(arg_id, responses)
 
             if field_put is None or (field_put > 0 and field_put <= 3):
                 put_fields(arg_id) 

@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import OpenAI, BadRequestError
 import os, json
 
 from app.logs import logs
@@ -83,6 +83,9 @@ Be more empathetic with users issues when writing a message back to them.
 
 If more than one issue is brought up in the ticket, in the response back to the user, add clarafication on all the issues listed by the user who submitted the ticket.
 """
+bad_img = f"""{script} \n(This is a special instruction... You are recieving this because an image(s) failed to import so a new OPENAI api request needs to be made without the images.) 
+If this is the case, take a look at raw_description of the json I am inputting. If there is 'src img' section, look to see if it is located within the signature or body of the description. 
+If it is in the signature, ignore it and don't mention it, if it is in the body, let the user know that their image did not get recieved properly and for them to resend it."""
 
 def first_response(ticket):
     key = os.environ["OPENAIKEY"]
@@ -92,6 +95,9 @@ def first_response(ticket):
 
     #Use ticket database row info to feed into openai to avoid bloat. Feeding in as json still.
     ticket = query_ticket(id)
+
+    #getting rid of json as it is not needed
+    ticket["json"] = None
 
     images = get_images(ticket.get("raw_description"))
 
@@ -121,18 +127,26 @@ def first_response(ticket):
             }
 
     if images:
-        content = [{"type": "input_text", "text": ticket_json}]
-        input = [{
-                    "role": "user",
-                    "content": content,
-                    }]
+        try:
+            content = [{"type": "input_text", "text": ticket_json}]
+            input = [{
+                        "role": "user",
+                        "content": content,
+                        }]
 
-        seperate_images(images, content)
+            seperate_images(images, content)
 
-        response = client.responses.create(
+            response = client.responses.create(
+                    model="gpt-5",
+                    instructions=script,
+                    input= input,
+                    text=text
+                    )
+        except BadRequestError:
+            response = client.responses.create(
                 model="gpt-5",
-                instructions=script,
-                input= input,
+                instructions=bad_img,
+                input=ticket_json,
                 text=text
                 )
     else:

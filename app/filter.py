@@ -76,7 +76,7 @@ def filter_post_to_fs_test(ticket):
     put_fields = ticket.get("put_fields")
     ai_attempts = ticket.get("ai_attempts")
 
-    if ((post_email is None or (post_email > 0 and post_email <= 3)) or (post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))) and (ai_attempts == 0):
+    if ((post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))) and (ai_attempts == 0):
         return ticket
     else:
         return None

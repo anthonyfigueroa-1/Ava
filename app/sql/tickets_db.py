@@ -130,8 +130,7 @@ def query_ticket(id):
             data = cur.fetchone()
     if data:
         data = data[0]
-        #getting rid of json as it is not needed
-        data["json"] = None
+
     else:
         data = None
         logs(f"Was not able to find ticket ID# {id} in tickets table")

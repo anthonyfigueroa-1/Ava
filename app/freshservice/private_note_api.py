@@ -19,7 +19,6 @@ def post_private_note(ticket_id, ai_response):
 
     if response.status_code == 201:
         attempt = 0
-        logs(f"Successfully posted AI note to ticket ID# {ticket_id}")
         add_post_note(attempt, ticket_id)
 
     else:
