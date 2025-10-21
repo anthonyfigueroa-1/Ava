@@ -1,6 +1,9 @@
+import faulthandler, signal, sys
+faulthandler.enable()
+faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True)
+
 from app.freshservice.tickets_api import get_tickets, get_one_ticket
 from app.freshservice.departments_api import get_departments
-from app.freshservice.requesters_api import get_requester
 from app.freshservice.email_api import post_email
 from app.freshservice.private_note_api import post_private_note
 from app.freshservice.conversations_api import get_conversations
@@ -11,10 +14,8 @@ from app.sql.departments_db import create_departments_table, query_departments_t
 from app.sql.requesters_db import create_requesters_table
 from app.ai.responses import first_response
 from app.logs import logs 
-from app.regex import seperate_responses
 from app.filter import filter_initial_tickets, filter_ai_response_test, filter_post_to_fs, filter_post_to_fs_test
 from app.arg_parse import parse_args
-from app.classes.ticket import Ticket
 
 import sys, time, json
 
@@ -34,8 +35,8 @@ def main():
     if arg_id:
         logs("Running test run")
 
-        ticket = get_one_ticket(arg_id)
-        add_tickets_table(ticket)
+        ticket = get_one_ticket(arg_id, test=True)
+        add_tickets_table(ticket, test=True)
 
         get_conversations(arg_id)
 
@@ -88,14 +89,11 @@ def main():
         #Request functions for GET API's from Freshservice
         tickets = get_tickets()
 
-        logs("Working on ticket batch. Getting requester and updating DB, adding tickets metadata to DB, and updating conversations field of the DB")
+        add_tickets_table(tickets)
+
+        logs(f"Getting conversations for tickets")
         for ticket in tickets:
             id = ticket.get("id")
-
-            #Will grab the requester info from the ticket and put some of that data from FS and store that in the requesters table in the database.
-            get_requester(ticket)
-            add_tickets_table(ticket)
-
             get_conversations(id)
 
         #Will work on only having this run every X time the script loops.
@@ -135,6 +133,7 @@ def main():
             for ticket in filter_post_fs:
                 id = ticket.get("id")
                 logs(f"Working on updating ticket in FreshService for ticket ID# {id}")
+                get_one_ticket(id)
 
                 ticket_class = query_ticket(id)
                 
@@ -156,14 +155,12 @@ def main():
                 if field_put is None or (field_put > 0 and field_put <= 3):
                     put_fields(id) 
 
-                get_conversations(id) 
-
             logs("End post to FS filter run.")
 
         else:
             logs("No tickets need updating on FreshService right now")
 
-        n = 5
+        n = 45
         logs(f"Sleeping for {n} seconds")
         time.sleep(n)
 

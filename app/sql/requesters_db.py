@@ -1,5 +1,7 @@
 import psycopg, os
 
+from app.freshservice.requesters_api import get_requester
+
 db = os.getenv("DB")
 
 def create_requesters_table():
@@ -36,21 +38,7 @@ def add_requesters_table(requester):
             except psycopg.errors.UniqueViolation:
                 return
 
-def query_name_requesters_table(id):
-    with psycopg.connect(db) as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT first_name, last_name FROM requesters WHERE id = %s", (id,))
-            full_name = cur.fetchone()
-        if full_name:
-            #This if checks to make sure if there is a last name, if last name is not None/NULL, it will combine the tuple values into one and return both first and last name.
-            if full_name[1]:    
-                full_name = " ".join(map(str, full_name))
-                return full_name
-            else:
-                full_name = full_name[0]
-                return full_name
-
-def query_requester(id):
+def query_requester(id, secondtry = False):
     with psycopg.connect(db) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT row_to_json(t) FROM requesters AS t WHERE id = %s", (id,))
@@ -59,4 +47,6 @@ def query_requester(id):
         if data:
             return data[0]
         else:
+            if secondtry is False:
+                get_requester(id)
             return None

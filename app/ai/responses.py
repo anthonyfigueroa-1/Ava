@@ -66,7 +66,7 @@ I want you to make sure to do this. Check conversations field. Only generate a f
    - If there are only conversations originating from 'from_email' (located inside the conversations field json) that matches the 'requester_email' field, in which case still generate a first_response/private_note.
 If ticket conversation field of the ticket meet neither exception, then generate this message exactly, and nothing else, "NO AI NEEDED", break, followed by reason.
 
-Whenever "NO AI NEEDED" is the case, only do that for the email, write the email in plain text, no HTML, Python syntax in it, just plain text. And leave the 'note' field as None or NULL.
+Whenever "NO AI NEEDED" is the case, only do that for the email, write the email in plain text, no HTML, nor any Python syntax in it, just plain text. And leave the 'note' field as None or NULL.
 
 If tickets coming in are of subject Offboarding request form or international travel form or of similar subjects, just post a simple message that goes along the lines of "We will begin processing your request as soon as we can", rewrite it so it sounds nicer.
 
@@ -82,10 +82,16 @@ Instead of saying we'll get back to the user today, leave it open, that we'll gi
 Be more empathetic with users issues when writing a message back to them.
 
 If more than one issue is brought up in the ticket, in the response back to the user, add clarafication on all the issues listed by the user who submitted the ticket.
+
+For any onboarding/offboarding tickets, generate 'NO AI NEEDED' followed by reason in the email and not note is needed.
+
+For any 'NO AI NEEDED' use
 """
 bad_img = f"""{script} \n(This is a special instruction... You are recieving this because an image(s) failed to import so a new OPENAI api request needs to be made without the images.) 
 If this is the case, take a look at raw_description of the json I am inputting. If there is 'src img' section, look to see if it is located within the signature or body of the description. 
 If it is in the signature, ignore it and don't mention it, if it is in the body, let the user know that their image did not get recieved properly and for them to resend it."""
+
+next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
 
 def first_response(ticket):
     key = os.environ["OPENAIKEY"]
@@ -118,9 +124,13 @@ def first_response(ticket):
                         "note": {
                             "type": ["string", "null"],
                             "description": "Note for ticket, or null if note is not needed"
+                            },
+                        "next_steps": {
+                            "type": ["string", "null"],
+                            "description": next_step
                             }
                         },
-                    "required": ["email", "note"],
+                    "required": ["email", "note", "next_steps"],
                     "additionalProperties": False
                     },
                 },
@@ -140,21 +150,24 @@ def first_response(ticket):
                     model="gpt-5",
                     instructions=script,
                     input= input,
-                    text=text
+                    text=text,
+                    timeout=100
                     )
         except BadRequestError:
             response = client.responses.create(
                 model="gpt-5",
                 instructions=bad_img,
                 input=ticket_json,
-                text=text
+                text=text,
+                timeout=100
                 )
     else:
         response = client.responses.create(
                 model="gpt-5",
                 instructions=script,
                 input=ticket_json,
-                text=text
+                text=text,
+                timeout=100
                 )
 
     response = response.output_text

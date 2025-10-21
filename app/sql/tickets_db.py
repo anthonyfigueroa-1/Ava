@@ -2,6 +2,7 @@ import psycopg, json, os
 import time as dtime
 from datetime import datetime
 
+from app.freshservice.requesters_api import get_requester
 from app.sql.requesters_db import query_name_requesters_table, query_requester
 from app.sql.departments_db import query_departments_table
 from app.logs import logs
@@ -32,35 +33,29 @@ def create_tickets_table():
                 closed BOOLEAN,
                 json TEXT)""")
 
-def add_tickets_table(ticket):
-    id = ticket.get("id")
-    subject = ticket.get("subject")
-    description = ticket.get("description_text")
-    requester_name = query_name_requesters_table(ticket.get("requester_id"))
-    department = query_departments_table(ticket.get("department_id"))
-    raw_description = ticket.get("description")
-
-    #enter time as UNIX time
-    time = datetime.strptime(ticket.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
-    unixtime = time.timestamp()
-
-    #get requester_email
-    requester = query_requester(ticket.get("requester_id"))
-    if requester:
-        requester_email = requester.get("primary_email")
-    else:
-        requester_email = None
-
+def add_tickets_table(tickets, test = False):
+    if test is True:
+        tickets = [tickets]
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            try:
+            for ticket in tickets:
+                id = ticket.get("id")
+                subject = ticket.get("subject")
+                description = ticket.get("description_text")
+                department = query_departments_table(ticket.get("department_id"))
+                raw_description = ticket.get("description")
+
+                #enter time as UNIX time
+                time = datetime.strptime(ticket.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
+                unixtime = time.timestamp()
+
+                #get requester_email
+                
                 cur.execute("""INSERT INTO tickets 
-                            (id, requester_name, requester_email, department, subject, description, raw_description, ticket_created, json) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);""",
-                            (id, requester_name, requester_email, department, subject, description, raw_description, unixtime, json.dumps(ticket)))
-                logs(f"Ticket ID# {id} added tickets table")
-            except psycopg.errors.UniqueViolation:
-                pass
+                            (id, department, subject, description, raw_description, ticket_created, json) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            ON CONFLICT (id) DO NOTHING;""",
+                            (id, department, subject, description, raw_description, unixtime, json.dumps(ticket)))
 
 def add_ai_response(ai_response, attempts, id):
     with psycopg.connect(tickets_db) as conn:
@@ -103,6 +98,40 @@ def add_put_fields(attempts, id):
             cur.execute("UPDATE tickets SET put_fields = %s WHERE id = %s", (attempts, id))
 
     logs(f"Updated ticket ID# {id} put_fields field")
+
+def add_json(ticket):
+    id = ticket.get("id")
+
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tickets SET json = %s WHERE id = %s", (json.dumps(ticket), id))
+
+    logs(f"Updated ticket ID# {id} json field")
+
+def add_requester(requester_id):
+    tries = 1
+    while True:
+        if tries == 2:
+            requester = query_requester(requester_id, secondtry=True)
+
+            if not requester:
+                requester_email = None
+                requester_name = None
+                break
+
+        else:
+            requester = query_requester(requester_id)
+            tries += 1
+
+        if requester:
+            requester_email = requester.get("primary_email")
+            requester_name = [requester.get("first_name", None), requester.get("last_name", "")]
+            requester_name = ' '.join(requester_name)
+            break
+
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tickets SET requester_name = %s, requester_email = %s WHERE id = %s", (requester_name, requester_email, requester_id))
 
 def query_ai_response(id):
     with psycopg.connect(tickets_db) as conn:
