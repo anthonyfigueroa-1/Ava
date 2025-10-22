@@ -1,7 +1,5 @@
 import psycopg, os
 
-from app.freshservice.requesters_api import get_requester
-
 db = os.getenv("DB")
 
 def create_requesters_table():
@@ -38,7 +36,7 @@ def add_requesters_table(requester):
             except psycopg.errors.UniqueViolation:
                 return
 
-def query_requester(id, secondtry = False):
+def query_requester(id):
     with psycopg.connect(db) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT row_to_json(t) FROM requesters AS t WHERE id = %s", (id,))
@@ -47,6 +45,4 @@ def query_requester(id, secondtry = False):
         if data:
             return data[0]
         else:
-            if secondtry is False:
-                get_requester(id)
             return None

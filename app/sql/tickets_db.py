@@ -3,7 +3,7 @@ import time as dtime
 from datetime import datetime
 
 from app.freshservice.requesters_api import get_requester
-from app.sql.requesters_db import query_name_requesters_table, query_requester
+from app.sql.requesters_db import query_requester
 from app.sql.departments_db import query_departments_table
 from app.logs import logs
 from app.classes.ticket import Ticket
@@ -53,7 +53,7 @@ def add_tickets_table(tickets, test = False):
                 
                 cur.execute("""INSERT INTO tickets 
                             (id, department, subject, description, raw_description, ticket_created, json) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
                             ON CONFLICT (id) DO NOTHING;""",
                             (id, department, subject, description, raw_description, unixtime, json.dumps(ticket)))
 
@@ -108,30 +108,39 @@ def add_json(ticket):
 
     logs(f"Updated ticket ID# {id} json field")
 
-def add_requester(requester_id):
-    tries = 1
-    while True:
-        if tries == 2:
-            requester = query_requester(requester_id, secondtry=True)
+def add_requesters(tickets):
+    for ticket in tickets:
+        ticket_id = ticket.get("id")
+        requester_id = ticket.get("requester_id")
 
-            if not requester:
-                requester_email = None
-                requester_name = None
+        tries = 1
+        while True:
+            if tries == 2:
+                get_requester(requester_id)
+                requester = query_requester(requester_id)
+
+                if not requester:
+                    requester_email = None
+                    requester_name = None
+                    break
+
+            else:
+                requester = query_requester(requester_id)
+                tries += 1
+
+            if requester:
+                requester_email = requester.get("primary_email")
+                first_name = requester.get("first_name", "NAME NOT FOUND")
+                last_name = requester.get("last_name")
+                requester_name = [first_name if first_name else "NAME NOT FOUND", last_name if last_name else ""]
+                requester_name = ' '.join(requester_name)
                 break
-
-        else:
-            requester = query_requester(requester_id)
-            tries += 1
-
-        if requester:
-            requester_email = requester.get("primary_email")
-            requester_name = [requester.get("first_name", None), requester.get("last_name", "")]
-            requester_name = ' '.join(requester_name)
-            break
-
-    with psycopg.connect(tickets_db) as conn:
-        with conn.cursor() as cur:
-            cur.execute("UPDATE tickets SET requester_name = %s, requester_email = %s WHERE id = %s", (requester_name, requester_email, requester_id))
+        
+        with psycopg.connect(tickets_db) as conn:
+            with conn.cursor() as cur:
+                cur.execute("""UPDATE tickets SET requester_name = %s, requester_email = %s 
+                            WHERE id = %s AND requester_email is NULL
+                            """, (requester_name, requester_email, ticket_id))
 
 def query_ai_response(id):
     with psycopg.connect(tickets_db) as conn:
