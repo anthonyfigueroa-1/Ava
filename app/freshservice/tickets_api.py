@@ -22,7 +22,7 @@ def get_tickets():
     except requests.exceptions.ReadTimeout:
         logs("Timeout Error for getting batch of tickets occured")
 
-def get_one_ticket(ticket_id, test=False):
+def get_one_ticket(ticket_id):
     url = f'https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}'
     key = os.environ["FSKEY"]
 

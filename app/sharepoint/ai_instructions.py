@@ -8,7 +8,7 @@ from app.logs import logs
 
 def get_bearer() -> str | None:
     try:
-        credentials = DeviceCodeCredential(timeout=45)
+        credentials = DeviceCodeCredential(timeout=60)
 
         token = credentials.get_token("https://graph.microsoft.com/.default").token
 

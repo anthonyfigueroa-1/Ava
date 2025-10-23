@@ -3,3 +3,5 @@ psycopg_binary
 requests
 openai
 python-dotenv
+python-docx
+azure.identity

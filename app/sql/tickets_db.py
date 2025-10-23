@@ -33,8 +33,8 @@ def create_tickets_table():
                 closed BOOLEAN,
                 json TEXT)""")
 
-def add_tickets_table(tickets, test = False):
-    if test is True:
+def add_tickets_table(tickets):
+    if isinstance(tickets, dict):
         tickets = [tickets]
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
@@ -109,6 +109,9 @@ def add_json(ticket):
     logs(f"Updated ticket ID# {id} json field")
 
 def add_requesters(tickets):
+    if isinstance(tickets, dict):
+        tickets = [tickets]
+
     for ticket in tickets:
         ticket_id = ticket.get("id")
         requester_id = ticket.get("requester_id")

@@ -2,7 +2,7 @@ import faulthandler, signal, sys
 faulthandler.enable()
 faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True)
 
-from app.freshservice.tickets_api import get_tickets, get_one_ticket
+from app.freshservice.tickets_api import get_one_ticket_test, get_tickets, get_one_ticket
 from app.freshservice.departments_api import get_departments
 from app.freshservice.email_api import post_email
 from app.freshservice.private_note_api import post_private_note
@@ -16,15 +16,15 @@ from app.ai.responses import first_response
 from app.logs import logs 
 from app.filter import filter_initial_tickets, filter_ai_response_test, filter_post_to_fs, filter_post_to_fs_test
 from app.arg_parse import parse_args
-from app.sharepoint.ai_instructions import get_sp_instructions
+from app.sharepoint.ai_instructions import get_sp_instructions, load_cached_instructions
 
 import sys, time, json
 
 def main():
-    instructions = get_sp_instructions()
-    
-    if not instructions:
-        sys.exit(5)
+    #Create arg parse to test individual tickets. 
+    args = parse_args()
+    arg_id = args.id if args.id else None
+    updateai = args.updateai 
 
     #functions to create the database and the tables for the databases
     create_db()
@@ -33,16 +33,23 @@ def main():
     create_requesters_table()
     logs("All tables were either successfully created or already existed in database.")
 
-    #Create arg parse to test individual tickets. 
-    args = parse_args()
-    arg_id = args.id if args.id else None
+    if updateai is True:
+        logs("Log in to update AI instructions")
+        instructions = get_sp_instructions()
+    else:
+        instructions = load_cached_instructions()
+
+    if not instructions:
+        logs("Exiting because no instructions for the AI bot were able to be loaded in")
+        sys.exit(5)
 
     #<<<Used for test runs>>>
     if arg_id:
         logs("Running test run")
 
-        ticket = get_one_ticket(arg_id, test=True)
-        add_tickets_table(ticket, test=True)
+        ticket = get_one_ticket_test(arg_id)
+        add_requesters(ticket)
+        add_tickets_table(ticket)
 
         get_conversations(arg_id)
 
