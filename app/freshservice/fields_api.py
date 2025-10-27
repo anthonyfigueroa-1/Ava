@@ -1,7 +1,6 @@
 import requests, os, json
 from requests.auth import HTTPBasicAuth
 from app.sql.tickets_db import add_put_fields, query_ticket
-from app.classes.ticket import Ticket
 
 def put_fields(ticket_id):
     ticket = query_ticket(ticket_id)

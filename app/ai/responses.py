@@ -4,13 +4,38 @@ import os, json
 from app.logs import logs
 from app.regex import get_images
 from app.sql.tickets_db import query_ticket, add_ai_response
+from app.ai.query_db import tools, ai_query_tickets
+
+next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
+
+text = [{
+        "format": {
+            "type": "json_schema",
+            "strict": True,
+            "name": "response",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "email": {"type": "string"},
+                    "note": {
+                        "type": ["string", "null"],
+                        "description": "Note for ticket, or null if note is not needed"
+                        },
+                    "next_steps": {
+                        "type": ["string", "null"],
+                        "description": next_step
+                        }
+                    },
+                "required": ["email", "note", "next_steps"],
+                "additionalProperties": False
+                },
+            },
+        }]
 
 def first_response(ticket, instructions):
     bad_img = f"""{instructions} \n(This is a special instruction... You are recieving this because an image(s) failed to import so a new OPENAI api request needs to be made without the images.) 
     If this is the case, take a look at raw_description of the json I am inputting. If there is 'src img' section, look to see if it is located within the signature or body of the description. 
     If it is in the signature, ignore it and don't mention it, if it is in the body, let the user know that their image did not get recieved properly and for them to resend it."""
-
-    next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
 
     key = os.environ["OPENAIKEY"]
     client = OpenAI(api_key=key)
@@ -29,30 +54,7 @@ def first_response(ticket, instructions):
 
     logs(f"Generating response for ticket ID# {id}")
 
-    #This JSON schema is so that OpenAI responses return back as a JSON.
-    text = {
-            "format": {
-                "type": "json_schema",
-                "strict": True,
-                "name": "response",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "email": {"type": "string"},
-                        "note": {
-                            "type": ["string", "null"],
-                            "description": "Note for ticket, or null if note is not needed"
-                            },
-                        "next_steps": {
-                            "type": ["string", "null"],
-                            "description": next_step
-                            }
-                        },
-                    "required": ["email", "note", "next_steps"],
-                    "additionalProperties": False
-                    },
-                },
-            }
+    ins = ai_query_tickets(ticket_json)
 
     if images:
         try:
@@ -75,7 +77,7 @@ def first_response(ticket, instructions):
             response = client.responses.create(
                 model="gpt-5",
                 instructions=bad_img,
-                input=ticket_json,
+                input=ins,
                 text=text,
                 timeout=100
                 )
@@ -83,7 +85,7 @@ def first_response(ticket, instructions):
         response = client.responses.create(
                 model="gpt-5",
                 instructions=instructions,
-                input=ticket_json,
+                input=ins,
                 text=text,
                 timeout=100
                 )

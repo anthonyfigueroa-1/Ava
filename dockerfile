@@ -3,6 +3,6 @@ WORKDIR /app
 COPY ./requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install --user -r requirements.txt
-COPY ./dist/ai_responder-0.2-py3-none-any.whl .
-RUN pip install ai_responder-0.2-py3-none-any.whl
+COPY ./dist/ai_responder-0.6-py3-none-any.whl .
+RUN pip install ai_responder-0.6-py3-none-any.whl
 CMD ["air"]

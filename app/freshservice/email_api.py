@@ -1,8 +1,7 @@
 import os, requests
 from requests.auth import HTTPBasicAuth
 from app.logs import logs
-from app.sql.tickets_db import add_time_last_ai_message_post, add_post_email, query_ticket_class
-from app.classes.ticket import Ticket
+from app.sql.tickets_db import add_time_last_ai_message_post, add_post_email
 
 def post_email(ticket_id, ai_response):
     url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}/reply"

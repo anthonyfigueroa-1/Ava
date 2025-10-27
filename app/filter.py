@@ -1,5 +1,4 @@
-from app.sql.tickets_db import query_ticket_class, query_ticket
-from app.classes.ticket import Ticket
+from app.sql.tickets_db import query_ticket
 from app.logs import logs
 import time
 

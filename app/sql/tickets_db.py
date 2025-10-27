@@ -6,7 +6,6 @@ from app.freshservice.requesters_api import get_requester
 from app.sql.requesters_db import query_requester
 from app.sql.departments_db import query_departments_table
 from app.logs import logs
-from app.classes.ticket import Ticket
 
 tickets_db = os.getenv("DB")
 
@@ -21,7 +20,9 @@ def create_tickets_table():
                 subject TEXT,
                 description TEXT,
                 raw_description TEXT,
-                last_ai_gen TEXT,
+                ai_email TEXT,
+                ai_note TEXT,
+                ai_next_steps TEXT,
                 ai_attempts BIGINT,
                 conversations TEXT,
                 ticket_created BIGINT,
@@ -36,6 +37,7 @@ def create_tickets_table():
 def add_tickets_table(tickets):
     if isinstance(tickets, dict):
         tickets = [tickets]
+
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
             for ticket in tickets:
@@ -58,11 +60,15 @@ def add_tickets_table(tickets):
                             (id, department, subject, description, raw_description, unixtime, json.dumps(ticket)))
 
 def add_ai_response(ai_response, attempts, id):
+    ai_email = ai_response.get("email")
+    ai_note = ai_response.get("note")
+    ai_next_steps = ai_response.get("next_steps")
+
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE tickets SET last_ai_gen = %s, ai_attempts = %s WHERE id = %s;",
-                        (json.dumps(ai_response), attempts, id))
-    logs(f"Updated ticket ID# {id} last_ai_gen and ai_attempts fields")
+            cur.execute("UPDATE tickets SET ai_email = %s, ai_note = %s, ai_next_steps = %s, ai_attempts = %s WHERE id = %s;",
+                        (ai_email, ai_note, ai_next_steps, attempts, id))
+    logs(f"Updated ticket ID# {id} ai_email and ai_attempts fields")
 
 def add_conversations(conversations, id):
     with psycopg.connect(tickets_db) as conn:
@@ -119,7 +125,7 @@ def add_requesters(tickets):
         tries = 1
         while True:
             if tries == 2:
-                get_requester(requester_id)
+                get_requester(ticket)
                 requester = query_requester(requester_id)
 
                 if not requester:
@@ -148,7 +154,7 @@ def add_requesters(tickets):
 def query_ai_response(id):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT last_ai_gen FROM tickets WHERE id = %s", (id,))
+            cur.execute("SELECT ai_email FROM tickets WHERE id = %s", (id,))
             ai_response = cur.fetchone()
 
             return ai_response 
@@ -178,35 +184,13 @@ def query_ticket(id):
 
     return data
 
-def query_ticket_class(id):
+def query_tickets(requester_name, keywords):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT row_to_json(t) FROM tickets AS t WHERE id = %s", (id,))
-            data = cur.fetchone()
+            cur.execute("SELECT row_to_json(t) FROM tickets AS t WHERE requester_name = %s", (requester_name,))
+            data = cur.fetchall()
     if data:
-        data = data[0]
-        logs(f"Found ticket ID# {id} in tickets table, returning row as a class")
-        ticket = Ticket(
-                data.get("id"),
-                data.get("requester_name"),
-                data.get("requester_email"),
-                data.get("department"),
-                data.get("subject"),
-                data.get("description"),
-                data.get("last_ai_gen"),
-                data.get("ai_attempts"),
-                data.get("conversations"),
-                data.get("ticket_created"),
-                data.get("time_last_message_recieved"),
-                data.get("time_last_ai_message_post"),
-                data.get("post_email"),
-                data.get("post_note"),
-                data.get("put_fields"),
-                data.get("closed"))
-
-        return ticket
+        return data
 
     else:
-        logs(f"Was not able to find ticket ID# {id} in tickets table")   
-        return None
-
+        logs(f"Was not able to find tickets ID# {id} in tickets table")

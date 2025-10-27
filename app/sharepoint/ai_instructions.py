@@ -79,14 +79,14 @@ def format_doc(file) -> str | None:
         return
 
 def save_instructions(instructions) -> None:
-    with open("instructions.txt", "w") as file:
+    with open("/instructions/instructions.txt", "w") as file:
         for line in instructions:
             file.write(line + "\n")
 
 def load_cached_instructions() -> str | None:
     line_list = []
 
-    with open("instructions.txt", "r") as file:
+    with open("/instructions/instructions.txt", "r") as file:
         for line in file:
             line_list.append(line)
 
