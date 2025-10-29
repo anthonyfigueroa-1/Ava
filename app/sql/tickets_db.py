@@ -184,10 +184,40 @@ def query_ticket(id):
 
     return data
 
-def query_tickets(requester_name, keywords):
+def query_ticket_response(id):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT row_to_json(t) FROM tickets AS t WHERE requester_name = %s", (requester_name,))
+            cur.execute("""SELECT row_to_json(t)
+                        FROM (
+                            SELECT id, requester_name, requester_email, department, subject, raw_description, conversations
+                            FROM tickets
+                            WHERE id = %s
+                            ) AS t""", (id,))
+            data = cur.fetchone()
+    if data:
+        data = data[0]
+
+    else:
+        data = None
+        logs(f"Was not able to find ticket ID# {id} in tickets table")
+
+    return data
+
+def query_tickets_ai(keywords):
+    clause = " OR ".join(f"description ILIKE %s" for _ in keywords)
+    query = f"""SELECT row_to_json(t)
+                        FROM (
+                            SELECT id, requester_name, requester_email, department, subject, raw_description, conversations
+                            FROM tickets
+                            WHERE ({clause})
+                            LIMIT 3
+                            )
+                        AS t"""
+    keywords = [f"%{k}%" for k in keywords]
+
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, [*keywords])
             data = cur.fetchall()
     if data:
         return data

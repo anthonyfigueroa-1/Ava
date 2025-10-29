@@ -2,7 +2,8 @@ from typing import final
 from openai import OpenAI
 import json, psycopg, os
 
-from app.sql.tickets_db import query_tickets
+from app.sql.tickets_db import query_tickets_ai
+from app.logs import logs
 
 tools = [
         {
@@ -12,19 +13,19 @@ tools = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "requester_name": {
-                        "type": ["string", "null"],
-                        "description": "Name of the user used to query the database."
+                        "keywords": {
+                            "type": "array",
+                            "description": "Keyword or keywords that would be most valuable to use with ILIKE in postgres to search for the description field for related tickets",
+                            "items": {
+                                "type": "string"
+                                },
+                            },
                         },
-                    "keywords": {
-                        "type": ["string", "null"],
-                        "description": "Keyword or keywords that would be most valuable to use ILIKE in postgres for to search for related tickets in the description sections of other tickets in the database",
-                        },
-                    },
-                "required": ["requester_name", "keywords"],
                 },
-            },
+            "required": ["keywords"],
+            }
         ]
+        
 
 instructions = 'Using json input, go ahead and user ticket info and requester name to query database of tickets. If requester name is null, return nothing to assist with skipping this entirely.'
 
@@ -33,6 +34,8 @@ def ai_query_tickets(ticket):
     client = OpenAI(api_key=key)
 
     ins = [{"role": "user", "content": ticket}]
+
+    logs("Querying tickets table for any relevant tickets")
 
     response = client.responses.create(
             model = "gpt-5",
@@ -47,11 +50,11 @@ def ai_query_tickets(ticket):
         if item.type == "function_call":
             if item.name == "query_tickets":
                 args = json.loads(item.arguments)
-                requester_name = args.get("requester_name")
                 keywords = args.get("keywords")
-                if requester_name and keywords:
-                    tickets = query_tickets(requester_name, keywords)
+                if keywords:
+                    tickets = query_tickets_ai(keywords)
                 else:
+                    logs("Could not find any relevant tickets")
                     return
 
                 ins.append({
@@ -62,4 +65,5 @@ def ai_query_tickets(ticket):
                             })
                     })
 
+    logs("Returning relevant tickets to AI agent for better response")
     return ins

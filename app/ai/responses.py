@@ -3,12 +3,12 @@ import os, json
 
 from app.logs import logs
 from app.regex import get_images
-from app.sql.tickets_db import query_ticket, add_ai_response
+from app.sql.tickets_db import query_ticket_response, add_ai_response
 from app.ai.query_db import tools, ai_query_tickets
 
 next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
 
-text = [{
+text = {
         "format": {
             "type": "json_schema",
             "strict": True,
@@ -30,7 +30,7 @@ text = [{
                 "additionalProperties": False
                 },
             },
-        }]
+        }
 
 def first_response(ticket, instructions):
     bad_img = f"""{instructions} \n(This is a special instruction... You are recieving this because an image(s) failed to import so a new OPENAI api request needs to be made without the images.) 
@@ -43,10 +43,7 @@ def first_response(ticket, instructions):
     id = ticket.get("id")
 
     #Use ticket database row info to feed into openai to avoid bloat. Feeding in as json still.
-    ticket = query_ticket(id)
-
-    #getting rid of json as it is not needed
-    ticket["json"] = None
+    ticket = query_ticket_response(id)
 
     images = get_images(ticket.get("raw_description"))
 
@@ -61,7 +58,7 @@ def first_response(ticket, instructions):
             content = [{"type": "input_text", "text": ticket_json}]
             input = [{
                         "role": "user",
-                        "content": content,
+                        "content": ins,
                         }]
 
             seperate_images(images, content)
@@ -69,7 +66,7 @@ def first_response(ticket, instructions):
             response = client.responses.create(
                     model="gpt-5",
                     instructions=instructions,
-                    input= input,
+                    input= ins,
                     text=text,
                     timeout=100
                     )
@@ -86,6 +83,7 @@ def first_response(ticket, instructions):
                 model="gpt-5",
                 instructions=instructions,
                 input=ins,
+                tools=tools,
                 text=text,
                 timeout=100
                 )
