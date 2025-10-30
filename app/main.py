@@ -2,6 +2,7 @@ import faulthandler, signal, sys
 faulthandler.enable()
 faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True)
 
+from app.freshservice import email_api
 from app.freshservice.tickets_api import get_one_ticket_test, get_tickets, get_one_ticket
 from app.freshservice.departments_api import get_departments
 from app.freshservice.email_api import post_email
@@ -100,22 +101,24 @@ def main():
                     get_one_ticket(id)
 
                     ticket = query_ticket(id)
-                    
-                    email_post = ticket.get("post_email")
-                    note_post = ticket.get("post_note")
+
                     field_put = ticket.get("put_fields")
-                    ai_email = f"email: {ticket.get('ai_email')}"
-                    ai_note = f"note: {ticket.get('ai_note')}"
-                    ai_next_steps = f"next_steps: {ticket.get('ai_next_steps')}"
+                    ai_email = json.loads(ticket.get('ai_email'))
+                    ai_note = json.loads(ticket.get('ai_note'))
+                    ai_next_steps = json.loads(ticket.get('ai_next_steps'))
 
+                    email_attempts = ai_email.get('attempts')
+                    note_attempts = ai_note.get('attempts')
+                    next_steps_attempts = ai_next_steps.get('attempts')
 
-    #                if email_post is None or (email_post > 0 and email_post <= 3):
-    #                    post_email(id, email)
-                    
-                    #This has been edited for demoing, would otherwise only post note but using for testing and just dumping the response json into the note field of the ticket.
-                    if note_post is None or (note_post > 0 and note_post <= 3):
+                    if email_attempts is None or (email_attempts > 0 and email_attempts <= 3):
+                        #post_email(id, email)
                         post_private_note(id, ai_email)
+                    
+                    if note_attempts is None or (note_attempts > 0 and note_attempts <= 3):
                         post_private_note(id, ai_note)
+
+                    if next_steps_attempts is None or (next_steps_attempts > 0 and next_steps_attempts <= 3):
                         post_private_note(id, ai_next_steps)
 
                     if field_put is None or (field_put > 0 and field_put <= 3):

@@ -1,6 +1,6 @@
 from app.sql.tickets_db import query_ticket
 from app.logs import logs
-import time
+import time, json
 
 def filter_initial_tickets(tickets):
     filtered_tickets = []
@@ -32,16 +32,27 @@ def filter_post_to_fs(tickets):
     logs("Querying ticket for posting AI response to FS filtering")
     for ticket in tickets:
         id = ticket.get("id")
-        ticket_class = query_ticket(id)
+        ticketdb = query_ticket(id)
 
-        post_note = ticket_class.get("post_note")
-        post_email = ticket_class.get("post_email")
-        put_fields = ticket_class.get("put_fields")
-        ai_attempts = ticket_class.get("ai_attempts")
+        try:
 
-        #removed from filter below for testing((post_email is None or (post_email > 0 and post_email <= 3)) or 
-        if ((post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))) and (ai_attempts == 0):
-            filtered_tickets.append(ticket)
+            email = (json.loads(ticketdb.get("ai_email"))).get("attempts")
+            note = (json.loads(ticketdb.get("ai_note"))).get("attempts")
+            ns = (json.loads(ticketdb.get("ai_next_steps"))).get("attempts")
+            put_fields = ticketdb.get("put_fields")
+
+            #removed from filter below for testing ((post_email is None or (post_email > 0 and post_email <= 3)) or 
+            if (
+                (note is None or (note > 0 and note <=3)) 
+                or (email is None or (email > 0 and email <=3)) 
+                or (ns is None or (ns > 0 and ns <= 3))
+                or (put_fields is None or (put_fields > 0 and put_fields <=3))
+                ):
+                    filtered_tickets.append(ticket)
+
+        except json.decoder.JSONDecodeError:
+            logs("Cannot work on ticket because either [ai_email, ai_note, ai_next_steps] is not a JSON in the database")
+            continue
 
     return filtered_tickets
 

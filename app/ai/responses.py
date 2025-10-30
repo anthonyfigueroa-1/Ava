@@ -3,7 +3,7 @@ import os, json
 
 from app.logs import logs
 from app.regex import get_images
-from app.sql.tickets_db import query_ticket_response, add_ai_response
+from app.sql.tickets_db import query_ticket_response, add_ai_response, query_ticket
 from app.ai.query_db import tools, ai_query_tickets
 
 next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
@@ -99,19 +99,7 @@ def first_response(ticket, instructions):
     check_if_first_response(response, id)
 
 def check_if_first_response(responses, ticket_id):
-    email = responses.get("email")
-
-    if "NO AI NEEDED" in email:
-        logs(f"NO AI NEEDED for ticket ID# {ticket_id}")
-        attempts = 10
-        add_ai_response(responses, attempts, ticket_id)
-
-    elif responses:
-        #No extra attempts needed for generating ai response
-        attempts = 0
-        add_ai_response(responses, attempts, ticket_id)
-
-    else:
+    if not responses:
         text = (f"No AI Response generated for ticket ID# {ticket_id}")
 
         logs(text)
@@ -128,6 +116,18 @@ def check_if_first_response(responses, ticket_id):
             attempts += 1
 
         add_ai_response(text, attempts, ticket_id)
+
+    email = responses.get("email")
+
+    if "NO AI NEEDED" in email:
+        logs(f"NO AI NEEDED for ticket ID# {ticket_id}")
+        attempts = 10
+        add_ai_response(responses, attempts, ticket_id)
+
+    elif responses:
+        #No extra attempts needed for generating ai response
+        attempts = 0
+        add_ai_response(responses, attempts, ticket_id)
 
 def seperate_images(images, content):
     for image in images:

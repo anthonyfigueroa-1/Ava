@@ -61,13 +61,25 @@ def add_tickets_table(tickets):
 
 def add_ai_response(ai_response, attempts, id):
     ai_email = ai_response.get("email")
+    ai_email = {
+            "ai_email": ai_email,
+            "attempts": None
+                }
     ai_note = ai_response.get("note")
+    ai_note = {
+            "ai_note": ai_note,
+            "attempts": None
+            }
     ai_next_steps = ai_response.get("next_steps")
+    ai_next_steps = {
+            "ai_next_steps": ai_next_steps,
+            "attempts": None
+            }
 
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
             cur.execute("UPDATE tickets SET ai_email = %s, ai_note = %s, ai_next_steps = %s, ai_attempts = %s WHERE id = %s;",
-                        (ai_email, ai_note, ai_next_steps, attempts, id))
+                        (json.dumps(ai_email), json.dumps(ai_note), json.dumps(ai_next_steps), attempts, id))
     logs(f"Updated ticket ID# {id} ai_email and ai_attempts fields")
 
 def add_conversations(conversations, id):
@@ -150,6 +162,21 @@ def add_requesters(tickets):
                 cur.execute("""UPDATE tickets SET requester_name = %s, requester_email = %s 
                             WHERE id = %s AND requester_email is NULL
                             """, (requester_name, requester_email, ticket_id))
+
+def update_ai_email(id, ai_email):
+   with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""UPDATE tickets SET ai_email = %s WHERE id = %s""", (json.dumps(ai_email), id))
+
+def update_ai_note(id, ai_note):
+   with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""UPDATE tickets SET ai_note = %s WHERE id = %s""", (json.dumps(ai_note), id))
+
+def update_ai_next_steps(id, ai_next_steps):
+   with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""UPDATE tickets SET ai_next_steps = %s WHERE id = %s""", (json.dumps(ai_next_steps), id))
 
 def query_ai_response(id):
     with psycopg.connect(tickets_db) as conn:
