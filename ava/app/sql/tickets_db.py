@@ -80,7 +80,7 @@ def add_ai_response(ai_response, attempts, id):
         with conn.cursor() as cur:
             cur.execute("UPDATE tickets SET ai_email = %s, ai_note = %s, ai_next_steps = %s, ai_attempts = %s WHERE id = %s;",
                         (json.dumps(ai_email), json.dumps(ai_note), json.dumps(ai_next_steps), attempts, id))
-    logs(f"Updated ticket ID# {id} ai_email and ai_attempts fields")
+    logs(f"Updated ticket ID# {id} ai_email, ai_note, ai_next_steps and ai_attempts fields")
 
 def add_conversations(conversations, id):
     with psycopg.connect(tickets_db) as conn:

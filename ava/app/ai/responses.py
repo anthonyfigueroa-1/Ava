@@ -58,7 +58,7 @@ def first_response(ticket, instructions):
             content = [{"type": "input_text", "text": ticket_json}]
             input = [{
                         "role": "user",
-                        "content": ins,
+                        "content": content,
                         }]
 
             seperate_images(images, content)
@@ -66,7 +66,7 @@ def first_response(ticket, instructions):
             response = client.responses.create(
                     model="gpt-5",
                     instructions=instructions,
-                    input= ins,
+                    input= input,
                     text=text,
                     timeout=100
                     )

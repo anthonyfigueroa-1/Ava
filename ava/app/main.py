@@ -27,13 +27,6 @@ def main():
     arg_id = args.id if args.id else None
     updateai = args.updateai 
 
-    #functions to create the database and the tables for the databases
-    create_db()
-    create_tickets_table()
-    create_departments_table()
-    create_requesters_table()
-    logs("All tables were either successfully created or already existed in database.")
-
     if updateai is True:
         logs("Login to update AI instructions")
         instructions = get_sp_instructions()
@@ -43,6 +36,14 @@ def main():
     if not instructions:
         logs("Exiting because no instructions for the AI bot were able to be loaded in")
         sys.exit(5)
+
+    #functions to create the database and the tables for the databases
+    create_db()
+    create_tickets_table()
+    create_departments_table()
+    create_requesters_table()
+    logs("All tables were either successfully created or already existed in database.")
+
 
     while True:
         #Request functions for GET API's from Freshservice
@@ -112,7 +113,8 @@ def main():
                     next_steps_attempts = ai_next_steps.get('attempts')
 
                     if email_attempts is None or (email_attempts > 0 and email_attempts <= 3):
-                        #post_email(id, email)
+                        #need to pass in ticket, because will want to check if requester is VIP or not
+                        #post_email(ticket, email)
                         post_private_note(id, ai_email)
                     
                     if note_attempts is None or (note_attempts > 0 and note_attempts <= 3):

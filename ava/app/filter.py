@@ -1,6 +1,8 @@
 from app.sql.tickets_db import query_ticket
 from app.logs import logs
-import time, json
+import time, json, zoneinfo
+from datetime import time as dtime
+from datetime import datetime
 
 def filter_initial_tickets(tickets):
     filtered_tickets = []
@@ -29,6 +31,13 @@ def filter_initial_tickets(tickets):
 def filter_post_to_fs(tickets):
     filtered_tickets = []
 
+    #CHANGE BACK TO 18
+    work_start = dtime(18,30,0)
+    work_end = dtime(7,30,0)
+    mtn = zoneinfo.ZoneInfo("America/Denver")
+
+    now_mtn = datetime.now(tz=mtn)
+
     logs("Querying ticket for posting AI response to FS filtering")
     for ticket in tickets:
         id = ticket.get("id")
@@ -43,12 +52,31 @@ def filter_post_to_fs(tickets):
 
             #removed from filter below for testing ((post_email is None or (post_email > 0 and post_email <= 3)) or 
             if (
-                (note is None or (note > 0 and note <=3)) 
-                or (email is None or (email > 0 and email <=3)) 
-                or (ns is None or (ns > 0 and ns <= 3))
-                or (put_fields is None or (put_fields > 0 and put_fields <=3))
-                ):
+                    (note is None or (note > 0 and note <=3)) 
+                    or (email is None or (email > 0 and email <=3)) 
+                    or (ns is None or (ns > 0 and ns <= 3))
+                    or (put_fields is None or (put_fields > 0 and put_fields <=3))
+                    ):
+
+                """If/else statement below is to assist with script getting in the way of on-call by waiting 10 min.
+                    before posting the messages and status to the ticket. This will allow on-call person to still be
+                    called but for the script to still post the AI message to the ticket."""
+                if (
+                        (now_mtn.time() > work_start
+                        and now_mtn.time() < work_end)
+                        and (now_mtn.weekday() <= 4)
+                        ):
                     filtered_tickets.append(ticket)
+                    
+                else:
+                    now_unix = time.time()
+                    ticket_created = ticketdb.get("ticket_created")
+                    tenmin = 60*10
+                    diff = int(now_unix)-int(ticket_created)
+
+                    if diff >= tenmin:
+                        filtered_tickets.append(ticket) 
+
 
         except json.decoder.JSONDecodeError:
             logs("Cannot work on ticket because either [ai_email, ai_note, ai_next_steps] is not a JSON in the database")

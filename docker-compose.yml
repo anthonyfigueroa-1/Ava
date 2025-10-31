@@ -1,7 +1,7 @@
 services:
   air:
     image: air:latest
-    build: .
+    build: ./ava
     container_name: air
     environment:
       PYTHONUNBUFFERED: 1
@@ -13,4 +13,5 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - "/NASty/Documents/instructions:/instructions"
+    command: ["air"]
     restart: unless-stopped

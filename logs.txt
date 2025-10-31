@@ -1,3 +1,0 @@
-10-18-2025 01:23:28 || Creating new log file for this session
-10-18-2025 01:23:29 || Got batch of tickets for group ALL IT
-10-18-2025 01:23:29 || Working on ticket batch. Getting requester and updating DB, adding tickets metadata to DB, and updating conversations field of the DB
