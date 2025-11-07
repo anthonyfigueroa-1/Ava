@@ -53,7 +53,18 @@ def first_response(ticket, instructions):
 
     ins = ai_query_tickets(ticket_json)
 
-    if images:
+    if not ins:
+        ins = [{"role": "user", "content": ticket_json}]
+
+        response = client.responses.create(
+                model="gpt-5",
+                instructions=instructions,
+                input=ins,
+                text=text,
+                timeout=100
+                )
+
+    elif images:
         try:
             content = [{"type": "input_text", "text": ticket_json}]
             input = [{
@@ -62,6 +73,8 @@ def first_response(ticket, instructions):
                         }]
 
             seperate_images(images, content)
+
+            ins += input
 
             response = client.responses.create(
                     model="gpt-5",

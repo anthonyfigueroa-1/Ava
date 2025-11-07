@@ -26,12 +26,9 @@ def create_tickets_table():
                 ai_attempts BIGINT,
                 conversations TEXT,
                 ticket_created BIGINT,
-                time_last_message_recieved BIGINT,
                 time_last_ai_message_post BIGINT,
-                post_email BIGINT,
-                post_note BIGINT,
                 put_fields BIGINT,
-                closed BOOLEAN,
+                status BIGINT,
                 json TEXT)""")
 
 def add_tickets_table(tickets):
@@ -178,6 +175,11 @@ def update_ai_next_steps(id, ai_next_steps):
         with conn.cursor() as cur:
             cur.execute("""UPDATE tickets SET ai_next_steps = %s WHERE id = %s""", (json.dumps(ai_next_steps), id))
 
+def update_ai_attempts(id: int, attempts: int) -> None:
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tickets SET ai_attempts = %s WHERE id = %s", (attempts, id))
+
 def query_ai_response(id):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
@@ -230,24 +232,65 @@ def query_ticket_response(id):
 
     return data
 
-def query_tickets_ai(keywords):
-    clause = " OR ".join(f"description ILIKE %s" for _ in keywords)
-    query = f"""SELECT row_to_json(t)
-                        FROM (
-                            SELECT id, requester_name, requester_email, department, subject, raw_description, conversations
-                            FROM tickets
-                            WHERE ({clause})
-                            LIMIT 3
-                            )
-                        AS t"""
-    keywords = [f"%{k}%" for k in keywords]
+def query_tickets_ai_slim(keywords: list[str | int], id: int, requester_name: str, limit: int) -> list | None:
+    query = f"""
+    WITH keywords AS (
+            SELECT unnest(%s::text[]) as keyword
+            ),
+    matches as (
+            SELECT t.id,
+                    t.requester_name,
+                    t.requester_email,
+                    t.subject,
+                    t.description,
+                    SUM(similarity(t.description, keyword) + similarity(t.subject, keyword)) as score
+                FROM tickets t
+                LEFT JOIN LATERAL (
+                    SELECT keyword FROM keywords
+                    WHERE t.description %% keyword
+                    OR t.subject %% keyword
+                    ) match_table ON TRUE
+                GROUP BY t.id, t.requester_name, t.requester_email, t.subject, t.description
+                )
+                SELECT row_to_json(t)
+                FROM matches
+                AS t
+                WHERE (requester_name ILIKE %s 
+                    OR score IS NOT null)
+                    AND id != %s
+                ORDER BY (CASE WHEN requester_name = %s THEN 1 ELSE 0 END) DESC,
+                COALESCE(score, 0) DESC
+                LIMIT %s;
+    """
 
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute(query, [*keywords])
+            cur.execute(query, [keywords, requester_name, id, requester_name, limit])
             data = cur.fetchall()
     if data:
         return data
 
     else:
-        logs(f"Was not able to find tickets ID# {id} in tickets table")
+        #This needs changing too.
+        logs(f"Was not able to find any relevant tickets to ticket ID# {id} in tickets table")
+
+def query_tickets_ai(ids: list[int]) -> list | None:
+    clause = " OR ".join(f"id = %s" for _ in ids)
+    query = f"""SELECT row_to_json(t)
+                        FROM (
+                            SELECT id, requester_name, requester_email, department, subject, raw_description, conversations
+                            FROM tickets
+                            WHERE ({clause})
+                            )
+                        AS t"""
+
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, [*ids])
+            data = cur.fetchall()
+    if data:
+        return data
+
+    else:
+        #Needs to be reworded
+        logs(f"Could not succesfully find ticket IDs {ids}")

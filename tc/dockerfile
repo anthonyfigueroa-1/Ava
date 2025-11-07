@@ -1,0 +1,7 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY ./requirements.txt /app/
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+COPY ./dist/ticket_checker-0.1-py3-none-any.whl /app/
+RUN pip install ticket_checker-0.1-py3-none-any.whl

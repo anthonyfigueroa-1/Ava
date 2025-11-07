@@ -30,6 +30,7 @@ def main():
     if updateai is True:
         logs("Login to update AI instructions")
         instructions = get_sp_instructions()
+        sys.exit(0)
     else:
         instructions = load_cached_instructions()
 
@@ -57,12 +58,6 @@ def main():
 
         if tickets:
             add_tickets_table(tickets)
-            add_requesters(tickets)
-
-            logs(f"Getting conversations for tickets")
-            for ticket in tickets:
-                id = ticket.get("id")
-                get_conversations(id)
 
             #Will work on only having this run every X time the script loops.
             #get_departments()
@@ -76,6 +71,10 @@ def main():
                 logs(f"Will now start working on generating AI responses for tickets that passed filter.")
                 for ticket in filter_ai_response:
                     id = ticket.get("id")
+
+                    get_conversations(id)
+                    add_requesters(tickets)
+
                     logs(f"Working on generating AI responses for ticket ID# {id}")
 
                     ticket = query_ticket(id)
@@ -113,9 +112,7 @@ def main():
                     next_steps_attempts = ai_next_steps.get('attempts')
 
                     if email_attempts is None or (email_attempts > 0 and email_attempts <= 3):
-                        #need to pass in ticket, because will want to check if requester is VIP or not
-                        #post_email(ticket, email)
-                        post_private_note(id, ai_email)
+                        post_email(ticket, ai_email)
                     
                     if note_attempts is None or (note_attempts > 0 and note_attempts <= 3):
                         post_private_note(id, ai_note)
@@ -137,7 +134,7 @@ def main():
         if arg_id:
             logs("Finished test run")
             sys.exit(0)
-        n = 45
+        n = 15
         logs(f"Sleeping for {n} seconds")
         time.sleep(n)
 

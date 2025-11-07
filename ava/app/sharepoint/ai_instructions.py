@@ -7,6 +7,7 @@ import requests, os
 from app.logs import logs
 
 instruct = os.environ["INSTRUCTION_FILE"]
+save_instruct = os.environ["INSTRUCTION_SAVE"]
 
 def get_bearer() -> str | None:
     try:
@@ -19,12 +20,11 @@ def get_bearer() -> str | None:
     except exceptions.ClientAuthenticationError:
         return
 
-def get_sp_instructions() -> str | None:
+def get_sp_instructions() -> None:
     bearer_token = get_bearer()
 
     if not bearer_token:
-        instructions = load_cached_instructions()
-        return instructions
+        logs("Was not able to retrieve bearer token from MS")
 
     drive_id = os.environ["DRIVE_ID"]
 
@@ -41,23 +41,14 @@ def get_sp_instructions() -> str | None:
 
         if not response.content:
             logs("Was not able to retrieve instructions form Tech Team SharePoint site")
-            instructions = load_cached_instructions()
-            return instructions
+            return
 
         logs("Succefully retrieved instructions from Tech Team SharePoint site")
         instructions = format_doc(response.content)
 
-        if instructions:
-            return instructions
-
-        else:
-            instructions = load_cached_instructions()
-            return instructions
-
     except requests.exceptions.ReadTimeout:
         logs("Read Timeout Error occured while trying to connect to the Tech Team Sharepoint site")
-        instructions = load_cached_instructions()
-        return instructions
+        return 
 
 def format_doc(file) -> str | None:
     #File comes in in bytes and compressed, this allows me to uncompress the file and grab the text as readable text.
@@ -81,7 +72,7 @@ def format_doc(file) -> str | None:
         return
 
 def save_instructions(instructions) -> None:
-    with open(instruct, "w") as file:
+    with open(save_instruct, "w") as file:
         for line in instructions:
             file.write(line + "\n")
 

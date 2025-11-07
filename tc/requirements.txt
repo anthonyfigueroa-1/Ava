@@ -1,0 +1,4 @@
+dotenv
+psycopg
+psycopg-binary
+requests

@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Ticket_Checker"
+description = "Checks FreshService tickets to see if open tickets are closed, and if so, will update the D.B. with that and update the json and conversation fields"
+version = "0.1"
+requires-python = ">=3.12"
+
+[project.scripts]
+tc = "app.main:runner"

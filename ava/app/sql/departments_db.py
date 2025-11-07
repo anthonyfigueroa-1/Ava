@@ -1,6 +1,6 @@
 import psycopg, os
 
-db = os.getenv("DB")
+db = os.environ["DB"]
 
 def create_departments_table():
     with psycopg.connect(db) as conn:
@@ -22,7 +22,7 @@ def add_departments_table(department):
 def query_departments_table(id):
     if not id:
         return None
-    with psycopg.connect(db) as conn:
+    with psycopg.connect(db, connect_timeout=25) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT name FROM departments WHERE id = %s", (id,))
             data = cur.fetchone()

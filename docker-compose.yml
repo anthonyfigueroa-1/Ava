@@ -1,17 +1,29 @@
 services:
-  air:
+  ava:
     image: air:latest
     build: ./ava
-    container_name: air
+    container_name: ava
+    working_dir: /app
     environment:
       PYTHONUNBUFFERED: 1
     logging:
       driver: "json-file"
     env_file:
-      - ./.env
+      - ./ava/.env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - "/NASty/Documents/instructions:/instructions"
-    command: ["air"]
+      - "./instructions:/app/instructions"
+    command: ["ava"]
+    restart: unless-stopped
+  tc:
+    image: tc:latest
+    build: ./tc
+    container_name: tc
+    working_dir: /app
+    environment:
+      PYTHONUNBUFFERED: 1
+    env_file:
+      - ./tc/.env
+    command: ["tc"]
     restart: unless-stopped

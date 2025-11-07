@@ -23,7 +23,7 @@ def get_tickets():
         logs("Timeout Error for getting batch of tickets occured")
 
 def get_one_ticket(ticket_id):
-    url = f'https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}'
+    url = f'https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}?include=tags'
     key = os.environ["FSKEY"]
 
     response = requests.get(url, auth=HTTPBasicAuth(key, "X"))

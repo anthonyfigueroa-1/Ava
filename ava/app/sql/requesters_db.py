@@ -29,7 +29,7 @@ def add_requesters_table(requester):
     department_ids = requester.get("department_ids")
     reporting_manager_id = requester.get("reporting_manager_id")
 
-    with psycopg.connect(db) as conn:
+    with psycopg.connect(db, connect_timeout=25) as conn:
         with conn.cursor() as cur:
             try:
                 cur.execute("""INSERT INTO requesters 
@@ -40,7 +40,7 @@ def add_requesters_table(requester):
                 return
 
 def query_requester(id):
-    with psycopg.connect(db) as conn:
+    with psycopg.connect(db, connect_timeout=25) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT row_to_json(t) FROM requesters AS t WHERE id = %s", (id,))
             data = cur.fetchone()

@@ -11,9 +11,9 @@ dispatch = {
 
 def post_private_note(ticket_id, ai_response):
     diff = {
-            "ai_email": f"<br>Email: {ai_response.get("ai_email")}",
-            "ai_note": f"<br>Note: {ai_response.get("ai_note")}",
-            "ai_next_steps": f"<br>Next steps: {ai_response.get("ai_next_steps")}"
+            "ai_email": f"*Email: {ai_response.get("ai_email")}",
+            "ai_note": f"{ai_response.get("ai_note")}",
+            "ai_next_steps": f"*Next steps: {ai_response.get("ai_next_steps")}"
             }
 
     key = next((ai_type for ai_type in ai_response if ai_type in dispatch), None)
@@ -34,7 +34,7 @@ def post_private_note(ticket_id, ai_response):
                 }
 
         payload = {
-                "body": f"USING THIS NOTE FOR AI TESTING<br><br>{diff[key]}"
+                "body": f"{diff[key]}"
                 }
 
         response = requests.post(url=url, json=payload, headers=header, auth=HTTPBasicAuth(fskey, 'X'), timeout=(20,20))
@@ -58,10 +58,7 @@ def post_private_note(ticket_id, ai_response):
                 ai_response["attempts"] += 1
                 dispatch[key](ticket_id, ai_response)
 
-    except requests.exceptions.ReadTimeout:
-        logs(f"Timeout Error for posting private note for ticket ID# {ticket_id}")
-        pass
-    except requests.exceptions.ConnectTimeout:
+    except requests.exceptions.ReadTimeout or requests.exceptions.ConnectTimeout:
         logs(f"Timeout Error for posting private note for ticket ID# {ticket_id}")
         pass
 

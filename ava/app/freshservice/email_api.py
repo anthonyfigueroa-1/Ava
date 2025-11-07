@@ -9,10 +9,13 @@ def post_email(ticket, ai_response):
     email = ai_response.get("ai_email")
 
     check = is_vip(json.loads(ticket.get("json")))
+    is_null = check_if_null(email)
 
-    if check is True:
+    if check is True or is_null is True:
         ai_response["attempts"] = 10
-        logs(f"Not posting AI email to ticket ID# {ticket_id} since requester is VIP")
+        logs(f"Not posting AI email to ticket ID# {ticket_id}")
+        logs(f"VIP: {check}")
+        logs(f"NULL: {is_null}")
         update_ai_email(ticket_id, ai_response)
         return
 
@@ -27,25 +30,29 @@ def post_email(ticket, ai_response):
             "body": email 
             }
 
-    response = requests.post(json=payload, headers=header, url=url, auth=HTTPBasicAuth(key, "x"))
+    try:
+        response = requests.post(json=payload, headers=header, url=url, auth=HTTPBasicAuth(key, "x"), timeout=(20,20))
 
-    if response.status_code == 201:
-        ai_response["attempts"] = 0
-        logs(f"Successfully posted AI email to ticket ID# {ticket_id}")
-        add_time_last_ai_message_post(ticket_id)
-        update_ai_email(ticket_id, ai_response)
-
-    else:
-        logs(f"Failed to post AI email to ticket ID# {ticket_id}")
-        attempts = ai_response["attempts"]
-
-        if attempts is None:
-            ai_response["attempts"] = 1
+        if response.status_code == 201:
+            ai_response["attempts"] = 0
+            logs(f"Successfully posted AI email to ticket ID# {ticket_id}")
+            add_time_last_ai_message_post(ticket_id)
             update_ai_email(ticket_id, ai_response)
 
         else:
-            ai_response["attempts"] += 1
-            update_ai_email(ticket_id, ai_response)
+            logs(f"Failed to post AI email to ticket ID# {ticket_id}")
+            attempts = ai_response["attempts"]
+
+            if attempts is None:
+                ai_response["attempts"] = 1
+                update_ai_email(ticket_id, ai_response)
+
+            else:
+                ai_response["attempts"] += 1
+                update_ai_email(ticket_id, ai_response)
+
+    except requests.exceptions.ReadTimeout or requests.exceptions.ConnectTimeout:
+        logs(f"Timeout error when posting email to ticket ID# {ticket_id}")
 
 
 def is_vip(ticket: dict) -> bool:
@@ -53,4 +60,13 @@ def is_vip(ticket: dict) -> bool:
 
     requester = query_requester(requester_id)
 
-    return requester.get("vip")
+    if requester:
+        return requester.get("vip")
+    else:
+        return False
+
+def check_if_null(email):
+    if not email or 'NO AI NEEDED' in email:
+        return True 
+    else:
+        return False
