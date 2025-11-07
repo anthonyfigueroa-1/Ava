@@ -1,6 +1,6 @@
-from app.sql.tickets import query_open_tickets
+from app.freshservice.conversations import get_ticket_conversations
+from app.sql.tickets import query_open_tickets, update_ticket_table
 from app.freshservice.tickets import get_one_ticket
-from app.check_status import check_status
 from app.logs import logs
 
 import time
@@ -25,7 +25,8 @@ def main() -> None:
             if not ticket:
                 continue
 
-            check_status(ticket)
+            conversation = get_ticket_conversations(ticket)
+            update_ticket_table(ticket, conversation)
 
             time.sleep(3)
 
