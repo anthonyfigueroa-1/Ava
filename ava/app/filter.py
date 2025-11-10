@@ -21,7 +21,14 @@ def filter_initial_tickets(tickets):
         attempts = ticket_class.get("ai_attempts")
         ticket_created = ticket_class.get("ticket_created")
 
-        if (attempts is None or (attempts > 0 and attempts <= 5)):
+        requester_id = ticket.get("requester_id")
+        tech_global = 5000163334
+
+        if (attempts is None or attempts == 15 or (attempts >= 1 and attempts <= 5)):
+
+            if requester_id == tech_global:
+                update_ai_attempts(id, 20) #20 is code for TECH GLOBAL requester
+                continue
 
             """If/else statement below is to assist with script getting in the way of on-call by waiting 10 min.
             before posting the messages and status to the ticket. This will allow on-call person to still be
@@ -35,7 +42,7 @@ def filter_initial_tickets(tickets):
                 
             else:
                 now_unix = time.time()
-                ticket_created = ticketdb.get("ticket_created")
+                ticket_created = ticket_class.get("ticket_created")
                 tenmin = 60*10
                 diff = int(now_unix)-int(ticket_created)
 
@@ -55,27 +62,30 @@ def filter_post_to_fs(tickets):
         id = ticket.get("id")
         ticketdb = query_ticket(id)
 
-        try:
+        ai_attempts = ticketdb.get("ai_attempts")
 
-            email = (json.loads(ticketdb.get("ai_email"))).get("attempts")
-            note = (json.loads(ticketdb.get("ai_note"))).get("attempts")
-            ns = (json.loads(ticketdb.get("ai_next_steps"))).get("attempts")
-            put_fields = ticketdb.get("put_fields")
-            ai_attempts = ticketdb.get("ai_attempts")
+        if ai_attempts not in (15, 20):
 
-            if (
-                    ((note is None or (note > 0 and note <=3)) 
-                    or (email is None or (email > 0 and email <=3)) 
-                    or (ns is None or (ns > 0 and ns <= 3))
-                    or (put_fields is None or (put_fields > 0 and put_fields <=3)))
-                    and (ai_attempts != 15) #15 is code for on-call
-                    ):
+            try:
 
-                       filtered_tickets.append(ticket) 
+                email = (json.loads(ticketdb.get("ai_email"))).get("attempts")
+                note = (json.loads(ticketdb.get("ai_note"))).get("attempts")
+                ns = (json.loads(ticketdb.get("ai_next_steps"))).get("attempts")
+                put_fields = ticketdb.get("put_fields")
+                ai_attempts = ticketdb.get("ai_attempts")
 
-        except json.decoder.JSONDecodeError:
-            logs("Cannot work on ticket because either [ai_email, ai_note, ai_next_steps] is not a JSON in the database")
-            continue
+                if (
+                        ((note is None or (note > 0 and note <=3)) 
+                        or (email is None or (email > 0 and email <=3)) 
+                        or (ns is None or (ns > 0 and ns <= 3))
+                        or (put_fields is None or (put_fields > 0 and put_fields <=3)))
+                        ):
+
+                           filtered_tickets.append(ticket) 
+
+            except json.decoder.JSONDecodeError or TypeError:
+                logs("Cannot work on ticket because either [ai_email, ai_note, ai_next_steps] is not a JSON or is None in the database")
+                continue
 
     return filtered_tickets
 

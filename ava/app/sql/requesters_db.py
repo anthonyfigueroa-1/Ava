@@ -40,7 +40,7 @@ def add_requesters_table(requester):
                 return
 
 def query_requester(id):
-    with psycopg.connect(db, connect_timeout=25) as conn:
+    with psycopg.connect(db) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT row_to_json(t) FROM requesters AS t WHERE id = %s", (id,))
             data = cur.fetchone()

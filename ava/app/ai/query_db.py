@@ -39,9 +39,9 @@ tools = [
                             "type": ["string"]
                             },
                             },
-                    "requester_name":{
+                    "requester_email":{
                         "type": "string",
-                        "description": "Name of requester to search for any old tickets put in by them."
+                        "description": "Email of requester to search for any old tickets put in by them."
                         },
                     "limits": {
                         "type": "integer",
@@ -159,3 +159,5 @@ def ai_query_slim(ticket: dict) -> list | None:
                     ins = []
 
     return ins
+
+

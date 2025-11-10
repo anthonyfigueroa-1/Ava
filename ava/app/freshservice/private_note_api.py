@@ -65,5 +65,5 @@ def post_private_note(ticket_id, ai_response):
 def check_if_null(ai_response, key):
     message = ai_response.get(f"{key}")
     
-    if not message or 'NO AI NEEDED' in message:
+    if not message:
         return False

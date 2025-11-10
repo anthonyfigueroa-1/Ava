@@ -45,6 +45,8 @@ def first_response(ticket, instructions):
     #Use ticket database row info to feed into openai to avoid bloat. Feeding in as json still.
     ticket = query_ticket_response(id)
 
+    check_priority(ticket)
+
     images = get_images(ticket.get("raw_description"))
 
     ticket_json = json.dumps(ticket)
@@ -150,3 +152,19 @@ def seperate_images(images, content):
                     }
 
         content.append(ai_json)
+
+def check_priority(ticket) -> None:
+    p_dict = {
+            1: "Low",
+            2: "Medium",
+            3: "High",
+            4: "Urgent"
+            }
+
+    priority = ticket.get("priority")
+    
+    for p in p_dict:
+        if priority == p:
+            priority = p_dict[p]
+
+    ticket["priority"] = priority

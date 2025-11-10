@@ -29,6 +29,7 @@ def create_tickets_table():
                 time_last_ai_message_post BIGINT,
                 put_fields BIGINT,
                 status BIGINT,
+                priority BIGINT,
                 json TEXT)""")
 
 def add_tickets_table(tickets):
@@ -43,18 +44,18 @@ def add_tickets_table(tickets):
                 description = ticket.get("description_text")
                 department = query_departments_table(ticket.get("department_id"))
                 raw_description = ticket.get("description")
+                priority = ticket.get("priority")
+                status = ticket.get("status")
 
                 #enter time as UNIX time
                 time = datetime.strptime(ticket.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
                 unixtime = time.timestamp()
 
-                #get requester_email
-                
                 cur.execute("""INSERT INTO tickets 
-                            (id, department, subject, description, raw_description, ticket_created, json) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            (id, department, subject, description, raw_description, ticket_created, json, priority, status) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                             ON CONFLICT (id) DO NOTHING;""",
-                            (id, department, subject, description, raw_description, unixtime, json.dumps(ticket)))
+                            (id, department, subject, description, raw_description, unixtime, json.dumps(ticket), priority, status))
 
 def add_ai_response(ai_response, attempts, id):
     ai_email = ai_response.get("email")
@@ -150,15 +151,16 @@ def add_requesters(tickets):
                 requester_email = requester.get("primary_email")
                 first_name = requester.get("first_name", "NAME NOT FOUND")
                 last_name = requester.get("last_name")
+                vip = requester.get("vip")
                 requester_name = [first_name if first_name else "NAME NOT FOUND", last_name if last_name else ""]
                 requester_name = ' '.join(requester_name)
                 break
         
         with psycopg.connect(tickets_db) as conn:
             with conn.cursor() as cur:
-                cur.execute("""UPDATE tickets SET requester_name = %s, requester_email = %s 
+                cur.execute("""UPDATE tickets SET requester_name = %s, requester_email = %s, requester_vip = %s
                             WHERE id = %s AND requester_email is NULL
-                            """, (requester_name, requester_email, ticket_id))
+                            """, (requester_name, requester_email, vip, ticket_id))
 
 def update_ai_email(id, ai_email):
    with psycopg.connect(tickets_db) as conn:
@@ -218,7 +220,7 @@ def query_ticket_response(id):
         with conn.cursor() as cur:
             cur.execute("""SELECT row_to_json(t)
                         FROM (
-                            SELECT id, requester_name, requester_email, department, subject, raw_description, conversations
+                            SELECT id, priority, requester_name, requester_email, requester_vip, department, subject, raw_description, conversations
                             FROM tickets
                             WHERE id = %s
                             ) AS t""", (id,))
@@ -232,40 +234,43 @@ def query_ticket_response(id):
 
     return data
 
-def query_tickets_ai_slim(keywords: list[str | int], id: int, requester_name: str, limit: int) -> list | None:
+def query_tickets_ai_slim(keywords: list[str | int], id: int, requester_email: str, limit: int) -> list | None:
     query = f"""
     WITH keywords AS (
             SELECT unnest(%s::text[]) as keyword
             ),
-    matches as (
+    cleaned as (
             SELECT t.id,
                     t.requester_name,
                     t.requester_email,
-                    t.subject,
-                    t.description,
-                    SUM(similarity(t.description, keyword) + similarity(t.subject, keyword)) as score
-                FROM tickets t
+                    regexp_replace(t.subject, E'[\\r\\n]+', ' ', 'g') as subject_clean,
+                    regexp_replace(t.description, E'[\\r\\n]+', ' ', 'g') as description_clean
+            FROM tickets t),
+    matches as (
+            SELECT c.*,
+                    SUM(word_similarity(c.description_clean, keyword) + word_similarity(c.subject_clean, keyword)) as score
+                FROM cleaned c
                 LEFT JOIN LATERAL (
                     SELECT keyword FROM keywords
-                    WHERE t.description %% keyword
-                    OR t.subject %% keyword
+                    WHERE c.description_clean ILIKE keyword
+                    OR c.subject_clean ILIKE keyword
                     ) match_table ON TRUE
-                GROUP BY t.id, t.requester_name, t.requester_email, t.subject, t.description
+                GROUP BY c.id, c.requester_name, c.requester_email, c.subject_clean, c.description_clean
                 )
                 SELECT row_to_json(t)
                 FROM matches
                 AS t
-                WHERE (requester_name ILIKE %s 
-                    OR score IS NOT null)
-                    AND id != %s
-                ORDER BY (CASE WHEN requester_name = %s THEN 1 ELSE 0 END) DESC,
+                WHERE id != %s AND score IS NOT null
+                ORDER BY (CASE WHEN requester_email = %s THEN 1 ELSE 0 END) DESC,
                 COALESCE(score, 0) DESC
                 LIMIT %s;
     """
 
+    keywords = [f"%{keyword}%" for keyword in keywords]
+
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute(query, [keywords, requester_name, id, requester_name, limit])
+            cur.execute(query, [keywords, id, requester_email, limit])
             data = cur.fetchall()
     if data:
         return data

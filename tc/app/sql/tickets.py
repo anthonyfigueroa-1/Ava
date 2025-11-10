@@ -17,11 +17,13 @@ def query_open_tickets() -> list:
 def update_ticket_table(ticket: dict, conversations: dict | None) -> None:
     id = ticket.get("id")
     status = ticket.get("status")
+    priority = ticket.get("priority")
     with psycopg.connect(db) as con:
         with con.cursor() as cur:
             cur.execute("""UPDATE tickets
-                        SET conversations = %s, status = %s
+                        SET conversations = %s, status = %s, priority = %s
                         WHERE id = %s""",
-                        (json.dumps(conversations), status, id)
+                        (json.dumps(conversations), status, priority, id)
                         )
-    logs(f"Successfully updated conversations and status of ticket ID# {id} in database")
+    if status in (4, 5):
+        logs(f"Successfully updated conversations and closed ticket ID# {id} in database")
