@@ -4,7 +4,7 @@ import os, json
 from app.logs import logs
 from app.regex import get_images
 from app.sql.tickets_db import query_ticket_response, add_ai_response, query_ticket
-from app.ai.query_db import tools, ai_query_tickets
+from app.ai.query_db_tickets import tools, ai_query_tickets
 
 next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
 
