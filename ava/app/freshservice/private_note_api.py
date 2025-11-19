@@ -1,4 +1,4 @@
-import os, requests, json
+import os, requests, json, re
 from requests.auth import HTTPBasicAuth
 from app.logs import logs
 from app.sql.tickets_db import update_ai_email, update_ai_note, update_ai_next_steps
@@ -29,12 +29,16 @@ def post_private_note(ticket_id, ai_response):
         url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}/notes"
         fskey = os.environ["FSKEY"]
 
+        ai_note = (diff[key])
+
+#        ai_note = re.sub(r"[\\n]+", "<br>", ai_note)
+
         header = {
                 "Content-Type": "application/json"
                 }
 
         payload = {
-                "body": f"{diff[key]}"
+                "body": ai_note
                 }
 
         response = requests.post(url=url, json=payload, headers=header, auth=HTTPBasicAuth(fskey, 'X'), timeout=(20,20))

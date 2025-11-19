@@ -81,5 +81,5 @@ key = os.environ["OPENAIKEY"]
 def private_note_notif():
    client = OpenAI(key)
 
-   response = client.responses.create(
+   response = client.responses.create()
 

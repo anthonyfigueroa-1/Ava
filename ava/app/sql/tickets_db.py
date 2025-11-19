@@ -141,6 +141,7 @@ def add_requesters(tickets):
                 if not requester:
                     requester_email = None
                     requester_name = None
+                    vip = None
                     break
 
             else:
@@ -234,7 +235,7 @@ def query_ticket_response(id):
 
     return data
 
-def query_tickets_ai_slim(keywords: list[str | int], id: int, requester_email: str, limit: int) -> list | None:
+def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str, limit: int) -> list | None:
     query = f"""
     WITH keywords AS (
             SELECT unnest(%s::text[]) as keyword
@@ -272,12 +273,12 @@ def query_tickets_ai_slim(keywords: list[str | int], id: int, requester_email: s
         with conn.cursor() as cur:
             cur.execute(query, [keywords, id, requester_email, limit])
             data = cur.fetchall()
-    if data:
-        return data
+
+    if data is None:
+        logs(f"Was not able to find any relevant tickets to ticket ID# {id} in tickets table")
 
     else:
-        #This needs changing too.
-        logs(f"Was not able to find any relevant tickets to ticket ID# {id} in tickets table")
+        return data
 
 def query_tickets_ai(ids: list[int]) -> list | None:
     clause = " OR ".join(f"id = %s" for _ in ids)

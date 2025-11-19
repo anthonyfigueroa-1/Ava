@@ -1,10 +1,11 @@
 from openai import OpenAI, BadRequestError
-import os, json
+import os, json, tiktoken
 
 from app.logs import logs
 from app.regex import get_images
 from app.sql.tickets_db import query_ticket_response, add_ai_response, query_ticket
-from app.ai.query_db_tickets import tools, ai_query_tickets
+from app.ai.query_db_tickets import ai_query_tickets
+from app.ai.query_db_articles import ai_articles
 
 next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
 
@@ -32,6 +33,8 @@ text = {
             },
         }
 
+encoding = tiktoken.encoding_for_model("gpt-5")
+
 def first_response(ticket, instructions):
     bad_img = f"""{instructions} \n(This is a special instruction... You are recieving this because an image(s) failed to import so a new OPENAI api request needs to be made without the images.) 
     If this is the case, take a look at raw_description of the json I am inputting. If there is 'src img' section, look to see if it is located within the signature or body of the description. 
@@ -51,32 +54,42 @@ def first_response(ticket, instructions):
 
     ticket_json = json.dumps(ticket)
 
-    logs(f"Generating response for ticket ID# {id}")
+    related_articles = ai_articles(ticket_json)
 
-    ins = ai_query_tickets(ticket_json)
+    ticket_neighbors = ai_query_tickets(ticket_json)
 
-    if not ins:
-        ins = [{"role": "user", "content": ticket_json}]
+    ins = {
+            "current_ticket":{
+                "description": "Current ticket you are working on writing a response for.",
+                "ticket": ticket_json,
+                },
+            "related_tickets":{
+                "description": "Tickets found in database to be most relevant to current ticket.",
+                "tickets": ticket_neighbors,
+                },
+            "related_articles":{
+                "description": "KB articles found in database and to be most relevant to current ticket.",
+                "articles": related_articles,
+                },
+            }
 
-        response = client.responses.create(
-                model="gpt-5",
-                instructions=instructions,
-                input=ins,
-                text=text,
-                timeout=100
-                )
+    ins = json.dumps(ins)
 
-    elif images:
+    input = [{"role": "user", "content": str(ins)}]
+
+    tokens = encoding.encode(str(ins))
+
+    logs(f"Token usage for response back: {tokens}")
+
+    if images:
         try:
-            content = [{"type": "input_text", "text": ticket_json}]
+            content = [{"type": "input_text", "text": str(ins)}]
             input = [{
                         "role": "user",
                         "content": content,
                         }]
 
             seperate_images(images, content)
-
-            ins += input
 
             response = client.responses.create(
                     model="gpt-5",
@@ -85,6 +98,7 @@ def first_response(ticket, instructions):
                     text=text,
                     timeout=100
                     )
+
         except BadRequestError:
             response = client.responses.create(
                 model="gpt-5",
@@ -97,8 +111,7 @@ def first_response(ticket, instructions):
         response = client.responses.create(
                 model="gpt-5",
                 instructions=instructions,
-                input=ins,
-                tools=tools,
+                input=input,
                 text=text,
                 timeout=100
                 )

@@ -64,7 +64,7 @@ def filter_post_to_fs(tickets):
 
         ai_attempts = ticketdb.get("ai_attempts")
 
-        if ai_attempts not in (15, 20):
+        if ai_attempts not in (15, 20, 25):
 
             try:
 

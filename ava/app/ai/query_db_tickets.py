@@ -1,5 +1,5 @@
 from openai import OpenAI
-import json, os
+import json, os, tiktoken
 
 from app.sql.tickets_db import query_tickets_ai, query_tickets_ai_slim
 from app.logs import logs
@@ -60,6 +60,7 @@ client = OpenAI(api_key=key)
 
 instruct1 = """
 Go ahead and use ticket info from the ticket json to query the database for tickets. 
+Limit keyword strings list to top 3 keyword/keyword string.
 If an 3rd-party ticket comes into our ticketing system, use the ticket ID of the 3rd-parties ticket, as one of the keywords, to search if any older tickets are related by ID.
 For any tickets containing a bookings link, do your best to locate and reference the associated ticket connected to that booking.
 """
@@ -69,11 +70,15 @@ Using previous tools output, narrow down specific tickets that could be useful f
 Tickets don't have to be super related, anything that'll help point you in the right direction to help the next request tailor a better response.
 """
 
-def ai_query_tickets(ticket: dict) -> list | None:
+encoding = tiktoken.encoding_for_model("gpt-5")
+
+def ai_query_tickets(ticket) -> list | None:
+    logs("Starting search for any relevant tickets")
     ins = ai_query_slim(ticket)
 
     if ins:
-        logs("Querying tickets table for any relevant tickets")
+        tokens = encoding.encode((str(ins)))
+        logs(f"Token usage for related tickets: {tokens}")
 
         response = client.responses.create(
                 model = "gpt-5",
@@ -102,20 +107,22 @@ def ai_query_tickets(ticket: dict) -> list | None:
                         return
 
                     if tickets:
-                        ins.append({
-                            "type": "function_call_output",
-                            "call_id": item.call_id,
-                            "output": json.dumps({
-                                    "tickets": tickets
-                                    })
-                            })
+                        neighbor_tickets = []
+                        for ticket in tickets:
+                            ticket = ticket[0]
+                            ticket["conversations"] = json.loads(ticket.get("conversations"))
+                            neighbor_tickets.append(ticket)
+
+                        logs("Returning relevant tickets to AI agent for better response")
+                        return neighbor_tickets 
+                        
                     else:
-                        ins = []
+                        logs("Query tickets failed")
+                        return []
 
-        logs("Returning relevant tickets to AI agent for better response")
 
-        return ins
 
+    logs("Query tickets failed right away")
     return [] 
 
 def ai_query_slim(ticket: dict) -> list | None:
