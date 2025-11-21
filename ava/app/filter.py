@@ -5,9 +5,11 @@ from datetime import time as dtime
 from datetime import datetime
 
 def filter_initial_tickets(tickets):
+    #need to remove this
     filtered_tickets = []
     
     logs("Querying tickets for AI response filtering")
+    #will get rid of loop
     for ticket in tickets:
         id = ticket.get("id")
         ticket_class = query_ticket(id)
@@ -52,7 +54,36 @@ def filter_initial_tickets(tickets):
                 else:
                     update_ai_attempts(id, 15) #15 is code for on-call, to avoid posting empty field in FS
 
+    #filtered_ai_ticket(ticket)
+    #will return bool
     return filtered_tickets
+
+def filtered_ai_ticket(ticket):
+
+    if filter_ai_response:
+        logs(f"Will now start working on generating AI responses for tickets that passed filter.")
+        for ticket in filter_ai_response:
+            id = ticket.get("id")
+
+            get_conversations(id)
+            add_requesters(tickets)
+
+            logs(f"Working on generating AI responses for ticket ID# {id}")
+
+            ticket = query_ticket(id)
+            
+            #Skips over ticket if no in list. Should have been in list from prior loop. So something went wrong if that's the case.
+            if not ticket:
+                logs(f"Could not find ticket ID# {id} in database, skipping over it")
+                continue
+
+            #first_response() returns a tuple... it returns the email for the user and the private note for the ticket, for the agent.
+            responses = first_response(ticket, instructions)
+
+        logs("End ai_response filter run.")
+
+    else:
+        logs("No tickets need AI generation right now")
 
 def filter_post_to_fs(tickets):
     filtered_tickets = []
@@ -65,6 +96,9 @@ def filter_post_to_fs(tickets):
         ai_attempts = ticketdb.get("ai_attempts")
 
         if ai_attempts not in (15, 20, 25):
+            #15 is on-call ticket wait
+            #20 is TECH GLOBAL tickets
+            #25 is any manual tickets I marked on DB as not needing attention
 
             try:
 
@@ -88,38 +122,3 @@ def filter_post_to_fs(tickets):
                 continue
 
     return filtered_tickets
-
-def filter_ai_response_test(ticket):
-    id = ticket.get("id")
-    logs("Querying ticket for AI response filtering")
-    ticket =  query_ticket(id)
-    time_message_post = ticket.get("time_last_ai_message_post")
-    attempts = ticket.get("ai_attempts")
-    recieved = ticket.get("ticket_created")
-
-    #Math to find out if enough time has passed to send message
-    now = int(time.time())
-    time_dif = now - recieved
-    #10 minutes in seconds
-    tenmin = 60 * 10
-
-    #Removing 10 minute wait per Ryan's request.
-    if (attempts is None or (attempts > 0 and attempts <= 5)):
-        return ticket
-    else:
-        return None
-
-def filter_post_to_fs_test(ticket):
-    id = ticket.get("id")
-    logs("Querying ticket for posting AI response to FS filtering")
-    ticket = query_ticket(id)
-
-    post_note = ticket.get("post_note")
-    post_email = ticket.get("post_email")
-    put_fields = ticket.get("put_fields")
-    ai_attempts = ticket.get("ai_attempts")
-
-    if ((post_note is None or (post_note > 0 and post_note <=3)) or (put_fields is None or (put_fields > 0 and put_fields <=3))) and (ai_attempts == 0):
-        return ticket
-    else:
-        return None

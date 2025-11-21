@@ -6,6 +6,7 @@ from app.regex import get_images
 from app.sql.tickets_db import query_ticket_response, add_ai_response, query_ticket
 from app.ai.query_db_tickets import ai_query_tickets
 from app.ai.query_db_articles import ai_articles
+from app.ai.conversations import convo_user_id_convert
 
 next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
 
@@ -58,6 +59,13 @@ def first_response(ticket, instructions):
 
     ticket_neighbors = ai_query_tickets(ticket_json)
 
+    ticket_user_convert = [ticket]
+
+    for ticket in ticket_neighbors:
+        ticket_user_convert.append(ticket)
+
+    users_in_convo = convo_user_id_convert(ticket_user_convert)
+
     ins = {
             "current_ticket":{
                 "description": "Current ticket you are working on writing a response for.",
@@ -71,13 +79,17 @@ def first_response(ticket, instructions):
                 "description": "KB articles found in database and to be most relevant to current ticket.",
                 "articles": related_articles,
                 },
+            "user_id_ref": {
+                "description": "Refernce JSON of user_id's mentioned to assist with tying user_id to a name, if applicable.",
+                "users:": users_in_convo,
+                },
             }
 
     ins = json.dumps(ins)
 
     input = [{"role": "user", "content": str(ins)}]
 
-    tokens = encoding.encode(str(ins))
+    tokens = len(encoding.encode(str(ins)))
 
     logs(f"Token usage for response back: {tokens}")
 

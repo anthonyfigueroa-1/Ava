@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import OpenAI, conversations
 import json, os, tiktoken
 
 from app.sql.tickets_db import query_tickets_ai, query_tickets_ai_slim
@@ -77,7 +77,7 @@ def ai_query_tickets(ticket) -> list | None:
     ins = ai_query_slim(ticket)
 
     if ins:
-        tokens = encoding.encode((str(ins)))
+        tokens = len(encoding.encode(str(ins)))
         logs(f"Token usage for related tickets: {tokens}")
 
         response = client.responses.create(
@@ -110,7 +110,10 @@ def ai_query_tickets(ticket) -> list | None:
                         neighbor_tickets = []
                         for ticket in tickets:
                             ticket = ticket[0]
-                            ticket["conversations"] = json.loads(ticket.get("conversations"))
+                            conversations = ticket.get("conversations")
+                            if conversations:
+                                ticket["conversations"] = json.loads(conversations)
+
                             neighbor_tickets.append(ticket)
 
                         logs("Returning relevant tickets to AI agent for better response")

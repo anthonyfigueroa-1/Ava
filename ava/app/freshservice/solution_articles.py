@@ -1,7 +1,6 @@
-import requests, os, json, re
+import requests, os, re
 from requests.auth import HTTPBasicAuth
 
-from app.ai.image_process import process_photos
 from app.sql.solution_articles_db import add_article_db 
 from app.logs import logs
 

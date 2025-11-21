@@ -1,4 +1,4 @@
-import json, os, re, tiktoken
+import json, os, tiktoken
 from openai import OpenAI
 
 from app.sql.solution_articles_db import ai_query_articles_id, query_article
