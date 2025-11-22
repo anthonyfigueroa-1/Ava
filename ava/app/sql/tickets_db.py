@@ -124,44 +124,40 @@ def add_json(ticket):
 
     logs(f"Updated ticket ID# {id} json field")
 
-def add_requesters(tickets):
-    if isinstance(tickets, dict):
-        tickets = [tickets]
+def add_requester(ticket):
+    ticket_id = ticket.get("id")
+    requester_id = ticket.get("requester_id")
 
-    for ticket in tickets:
-        ticket_id = ticket.get("id")
-        requester_id = ticket.get("requester_id")
+    tries = 1
+    while True:
+        if tries == 2:
+            get_requester(ticket)
+            requester = query_requester(requester_id)
 
-        tries = 1
-        while True:
-            if tries == 2:
-                get_requester(ticket)
-                requester = query_requester(requester_id)
-
-                if not requester:
-                    requester_email = None
-                    requester_name = None
-                    vip = None
-                    break
-
-            else:
-                requester = query_requester(requester_id)
-                tries += 1
-
-            if requester:
-                requester_email = requester.get("primary_email")
-                first_name = requester.get("first_name", "NAME NOT FOUND")
-                last_name = requester.get("last_name")
-                vip = requester.get("vip")
-                requester_name = [first_name if first_name else "NAME NOT FOUND", last_name if last_name else ""]
-                requester_name = ' '.join(requester_name)
+            if not requester:
+                requester_email = None
+                requester_name = None
+                vip = None
                 break
-        
-        with psycopg.connect(tickets_db) as conn:
-            with conn.cursor() as cur:
-                cur.execute("""UPDATE tickets SET requester_name = %s, requester_email = %s, requester_vip = %s
-                            WHERE id = %s AND requester_email is NULL
-                            """, (requester_name, requester_email, vip, ticket_id))
+
+        else:
+            requester = query_requester(requester_id)
+            tries += 1
+
+        if requester:
+            requester_email = requester.get("primary_email")
+            first_name = requester.get("first_name", "NAME NOT FOUND")
+            last_name = requester.get("last_name")
+            vip = requester.get("vip")
+            requester_name = [first_name if first_name else "NAME NOT FOUND", last_name if last_name else ""]
+            requester_name = ' '.join(requester_name)
+            break
+    
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""UPDATE tickets SET requester_name = %s, requester_email = %s, requester_vip = %s
+                        WHERE id = %s AND requester_email is NULL
+                        """, (requester_name, requester_email, vip, ticket_id))
 
 def update_ai_email(id, ai_email):
    with psycopg.connect(tickets_db) as conn:

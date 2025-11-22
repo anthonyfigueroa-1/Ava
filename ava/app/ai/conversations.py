@@ -15,8 +15,6 @@ def convo_user_id_convert(tickets):
                 user_id = convo.get("user_id")
                 user_ids.append(user_id)
             
-    print(user_ids)
-        
     if not user_ids:
         return
 
@@ -37,7 +35,6 @@ def convo_user_id_convert(tickets):
                 get_requester_by_id(user_id)    
                 retries+=1
 
-    print(users)
     return users
 
 def load_convo_for_current_ticket(tickets):

@@ -7,6 +7,7 @@ from app.sql.tickets_db import query_ticket_response, add_ai_response, query_tic
 from app.ai.query_db_tickets import ai_query_tickets
 from app.ai.query_db_articles import ai_articles
 from app.ai.conversations import convo_user_id_convert
+from app.ai import instructions
 
 next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
 
@@ -36,7 +37,7 @@ text = {
 
 encoding = tiktoken.encoding_for_model("gpt-5")
 
-def first_response(ticket, instructions):
+def first_response(ticket):
     bad_img = f"""{instructions} \n(This is a special instruction... You are recieving this because an image(s) failed to import so a new OPENAI api request needs to be made without the images.) 
     If this is the case, take a look at raw_description of the json I am inputting. If there is 'src img' section, look to see if it is located within the signature or body of the description. 
     If it is in the signature, ignore it and don't mention it, if it is in the body, let the user know that their image did not get recieved properly and for them to resend it."""

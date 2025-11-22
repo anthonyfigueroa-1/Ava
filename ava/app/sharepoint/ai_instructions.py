@@ -1,8 +1,12 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from azure.identity import DeviceCodeCredential
 from azure.core import exceptions
 from io import BytesIO
 from docx import Document
-import requests, os
+import requests, os, sys
 
 from app.logs import logs
 
@@ -89,4 +93,5 @@ def load_cached_instructions() -> str | None:
         return instructions
 
     else:
-        return
+        logs("Exiting because no instructions for the AI bot were able to be loaded in")
+        sys.exit(5)

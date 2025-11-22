@@ -46,9 +46,6 @@ def put_fields(ticket_id):
 
                 add_put_fields(attempts, ticket_id)
 
-    except requests.exceptions.ReadTimeout:
-        logs(f"Timeout Error for putting ticket fields for ticket ID# {ticket_id}")
-        pass
-    except requests.exceptions.ConnectTimeout:
+    except requests.exceptions.Timeout:
         logs(f"Timeout Error for putting ticket fields for ticket ID# {ticket_id}")
         pass
