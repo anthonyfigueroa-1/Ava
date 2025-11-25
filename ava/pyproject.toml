@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "AI-Responder"
+name = "Ava"
 description = "Generate responses for tickets coming in from Freshservice and leave ticket notes for next steps for agents."
-version = "1.2"
+version = "2.1"
 requires-python = ">=3.12"
 
 [project.scripts]

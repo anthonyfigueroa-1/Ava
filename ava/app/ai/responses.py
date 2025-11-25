@@ -1,3 +1,4 @@
+from app.freshservice.conversations_api import get_conversations
 from openai import OpenAI, BadRequestError
 import os, json, tiktoken
 
@@ -59,6 +60,8 @@ def first_response(ticket):
     related_articles = ai_articles(ticket_json)
 
     ticket_neighbors = ai_query_tickets(ticket_json)
+
+    get_conversations(id)
 
     ticket_user_convert = [ticket]
 

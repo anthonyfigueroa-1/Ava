@@ -10,6 +10,12 @@ import time, json, zoneinfo
 from datetime import time as dtime
 from datetime import datetime
 
+#15 is on-call ticket wait
+#20 is TECH GLOBAL tickets
+#21 is Resolved/Closed tickets
+#22 is ticket already assigned to an agent
+#25 is any manual tickets I marked on DB as not needing attention
+
 def filter_initial_tickets(ticket):
     id = ticket.get("id")
     ticket_class = query_ticket(id)
@@ -22,6 +28,8 @@ def filter_initial_tickets(ticket):
 
     attempts = ticket_class.get("ai_attempts")
     ticket_created = ticket_class.get("ticket_created")
+    status = ticket_class.get("status")
+    responder_id = ticket_class.get("responder_id")
 
     requester_id = ticket.get("requester_id")
     tech_global = 5000163334
@@ -30,6 +38,10 @@ def filter_initial_tickets(ticket):
         if requester_id == tech_global:
             update_ai_attempts(id, 20) #20 is code for TECH GLOBAL requester
             return
+        elif responder_id:
+            update_ai_attempts(id, 22) 
+        elif status in (4, 5):
+            update_ai_attempts(id, 21)
 
         """If/else statement below is to assist with script getting in the way of on-call by waiting 10 min.
         before posting the messages and status to the ticket. This will allow on-call person to still be
@@ -58,8 +70,8 @@ def filter_initial_tickets(ticket):
 def filtered_ai_ticket(ticket):
     id = ticket.get("id")
 
-    get_conversations(id)
     add_requester(ticket)
+    get_conversations(id)
 
     logs(f"Working on generating AI responses for ticket ID# {id}")
 
@@ -79,11 +91,8 @@ def filter_post_to_fs(ticket):
 
     ai_attempts = ticketdb.get("ai_attempts")
 
-    if ai_attempts not in (15, 20, 25):
-        #15 is on-call ticket wait
-        #20 is TECH GLOBAL tickets
-        #25 is any manual tickets I marked on DB as not needing attention
-
+    if ai_attempts not in (15, 20, 21, 22, 25):
+        
         try:
 
             email = (json.loads(ticketdb.get("ai_email"))).get("attempts")

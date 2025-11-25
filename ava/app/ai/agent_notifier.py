@@ -77,9 +77,16 @@ agent_dict = [{
               ]
 
 key = os.environ["OPENAIKEY"]
+
+instructions = ""
  
-def private_note_notif():
+def private_note_notif(ticket):
    client = OpenAI(key)
+
+   input = {
+           "role": "user",
+           "input": ticket
+           }
 
    response = client.responses.create()
 
