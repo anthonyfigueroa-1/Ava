@@ -29,7 +29,7 @@ def filter_initial_tickets(ticket):
     attempts = ticket_class.get("ai_attempts")
     ticket_created = ticket_class.get("ticket_created")
     status = ticket_class.get("status")
-    responder_id = ticket_class.get("responder_id")
+#    responder_id = ticket_class.get("responder_id")
 
     requester_id = ticket.get("requester_id")
     tech_global = 5000163334
@@ -38,8 +38,8 @@ def filter_initial_tickets(ticket):
         if requester_id == tech_global:
             update_ai_attempts(id, 20) #20 is code for TECH GLOBAL requester
             return
-        elif responder_id:
-            update_ai_attempts(id, 22) 
+#        elif responder_id:
+#            update_ai_attempts(id, 22) 
         elif status in (4, 5):
             update_ai_attempts(id, 21)
 

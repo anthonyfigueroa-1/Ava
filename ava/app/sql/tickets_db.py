@@ -54,8 +54,16 @@ def add_tickets_table(tickets):
                 cur.execute("""INSERT INTO tickets 
                             (id, department, subject, description, raw_description, ticket_created, json, priority, status) 
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            ON CONFLICT (id) DO NOTHING;""",
+                            ON CONFLICT (id) DO NOTHING
+                            RETURNING id;""",
                             (id, department, subject, description, raw_description, unixtime, json.dumps(ticket), priority, status))
+
+                result = cur.fetchone()
+
+                if not result:
+                    update_ticket(ticket)
+
+
 
 def add_ai_response(ai_response, attempts, id):
     ai_email = ai_response.get("email")
@@ -158,6 +166,16 @@ def add_requester(ticket):
             cur.execute("""UPDATE tickets SET requester_name = %s, requester_email = %s, requester_vip = %s
                         WHERE id = %s AND requester_email is NULL
                         """, (requester_name, requester_email, vip, ticket_id))
+
+def update_ticket(ticket):
+    id = ticket.get("id")
+    priority = ticket.get("priority")
+    status = ticket.get("status")
+
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tickets SET priority = %s, status = %s WHERE id = %s", (priority, status, id))
+
 
 def update_ai_email(id, ai_email):
    with psycopg.connect(tickets_db) as conn:
