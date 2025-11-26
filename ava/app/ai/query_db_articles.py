@@ -59,6 +59,9 @@ fat_instructions="""
 From the list of solutions articles you have been given from the previous tool output, go ahead and refine the articles.
 Choose the top 2 article ID's that are the absolute closest in regards to relevance to the current ticket at hand.
 If a tie is met, have the newest article be the tie breaker.
+
+If the current ticket at hand is about phishing/spam email(s), an example being a ticket of a user forwarding an email to us asking about whether or not the
+email is spam/phishing, add on a 3rd article into the array, with the ID of that being 5000101148.
 """
 
 encoding = tiktoken.encoding_for_model("gpt-5")

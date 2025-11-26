@@ -1,6 +1,7 @@
 from app.freshservice.email_api import post_email
 from app.freshservice.fields_api import put_fields
 from app.freshservice.private_note_api import post_private_note
+from app.freshservice.service_request_api import get_service_request_info
 from app.sql.tickets_db import query_ticket, update_ai_attempts, add_requester
 from app.freshservice.conversations_api import get_conversations
 from app.ai.responses import first_response
@@ -42,6 +43,7 @@ def filter_initial_tickets(ticket):
 #            update_ai_attempts(id, 22) 
         elif status in (4, 5):
             update_ai_attempts(id, 21)
+            return
 
         """If/else statement below is to assist with script getting in the way of on-call by waiting 10 min.
         before posting the messages and status to the ticket. This will allow on-call person to still be
@@ -72,17 +74,17 @@ def filtered_ai_ticket(ticket):
 
     add_requester(ticket)
     get_conversations(id)
+    get_service_request_info(ticket)
 
     logs(f"Working on generating AI responses for ticket ID# {id}")
 
     ticket = query_ticket(id)
     
-    #Skips over ticket if no in list. Should have been in list from prior loop. So something went wrong if that's the case.
+    #Skips over ticket if not in list. Should have been in list from prior loop. So something went wrong if that's the case.
     if not ticket:
         logs(f"Could not find ticket ID# {id} in database, skipping over it")
         return
 
-    #first_response() returns a tuple... it returns the email for the user and the private note for the ticket, for the agent.
     first_response(ticket)
 
 def filter_post_to_fs(ticket):

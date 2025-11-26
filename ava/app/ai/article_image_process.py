@@ -74,13 +74,17 @@ def process_photos(article):
     except BadRequestError:
         return
 
-    response = response.output_text
+    if response.output_text:
+        response = response.output_text
 
-    images_metadata = json.loads(response)
+        images_metadata = json.loads(response)
 
-    images = images_metadata.get("image_metadata")
+        images = images_metadata.get("image_metadata")
 
-    update_img_metadata(images, id)
+        update_img_metadata(images, id)
+
+    else:
+        return
 
 def check_photo_metadata(id):
     article = query_article(id)

@@ -167,6 +167,13 @@ def add_requester(ticket):
                         WHERE id = %s AND requester_email is NULL
                         """, (requester_name, requester_email, vip, ticket_id))
 
+def add_service_request(items, id):
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        UPDATE tickets SET service_request = %s WHERE id = %s
+                        """, (items, id))
+
 def update_ticket(ticket):
     id = ticket.get("id")
     priority = ticket.get("priority")
