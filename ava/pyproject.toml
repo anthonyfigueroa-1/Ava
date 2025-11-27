@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "Ava"
 description = "Generate responses for tickets coming in from Freshservice and leave ticket notes for next steps for agents."
-version = "2.1"
+version = "2.2"
 requires-python = ">=3.12"
 
 [project.scripts]

@@ -45,7 +45,7 @@ def get_requester_by_id(requester_id):
     counter = 0
 
     while True:
-        if counter > 2:
+        if counter > 0:
             break
 
         if requester_id:

@@ -107,17 +107,8 @@ def ai_query_tickets(ticket) -> list | None:
                         return
 
                     if tickets:
-                        neighbor_tickets = []
-                        for ticket in tickets:
-                            ticket = ticket[0]
-                            conversations = ticket.get("conversations")
-                            if conversations:
-                                ticket["conversations"] = json.loads(conversations)
-
-                            neighbor_tickets.append(ticket)
-
                         logs("Returning relevant tickets to AI agent for better response")
-                        return neighbor_tickets 
+                        return tickets 
                         
                     else:
                         logs("Query tickets failed")

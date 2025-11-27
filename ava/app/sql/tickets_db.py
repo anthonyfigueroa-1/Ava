@@ -1,6 +1,7 @@
 import psycopg, json, os
 import time as dtime
 from datetime import datetime
+from psycopg.types.json import Jsonb
 
 from app.freshservice.requesters_api import get_requester
 from app.sql.requesters_db import query_requester
@@ -56,7 +57,7 @@ def add_tickets_table(tickets):
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                             ON CONFLICT (id) DO NOTHING
                             RETURNING id;""",
-                            (id, department, subject, description, raw_description, unixtime, json.dumps(ticket), priority, status))
+                            (id, department, subject, description, raw_description, unixtime, Jsonb(ticket), priority, status))
 
                 result = cur.fetchone()
 
@@ -85,13 +86,13 @@ def add_ai_response(ai_response, attempts, id):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
             cur.execute("UPDATE tickets SET ai_email = %s, ai_note = %s, ai_next_steps = %s, ai_attempts = %s WHERE id = %s;",
-                        (json.dumps(ai_email), json.dumps(ai_note), json.dumps(ai_next_steps), attempts, id))
+                        (Jsonb(ai_email), Jsonb(ai_note), Jsonb(ai_next_steps), attempts, id))
     logs(f"Updated ticket ID# {id} ai_email, ai_note, ai_next_steps and ai_attempts fields")
 
 def add_conversations(conversations, id):
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE tickets SET conversations = %s WHERE id = %s", (json.dumps(conversations), id))
+            cur.execute("UPDATE tickets SET conversations = %s WHERE id = %s", (Jsonb(conversations), id))
 
 def add_time_last_ai_message_post(id):
     unix_time = dtime.time()
@@ -172,7 +173,7 @@ def add_service_request(items, id):
         with conn.cursor() as cur:
             cur.execute("""
                         UPDATE tickets SET service_request = %s WHERE id = %s
-                        """, (items, id))
+                        """, (Jsonb(items), id))
 
 def update_ticket(ticket):
     id = ticket.get("id")
@@ -242,7 +243,7 @@ def query_ticket_response(id):
         with conn.cursor() as cur:
             cur.execute("""SELECT row_to_json(t)
                         FROM (
-                            SELECT id, priority, requester_name, requester_email, requester_vip, department, subject, raw_description, conversations
+                            SELECT id, priority, requester_name, requester_email, requester_vip, department, subject, raw_description, service_request, conversations
                             FROM tickets
                             WHERE id = %s
                             ) AS t""", (id,))

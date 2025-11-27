@@ -11,6 +11,8 @@ import time, json, zoneinfo
 from datetime import time as dtime
 from datetime import datetime
 
+from app.ticket_type import check_if_service_request
+
 #15 is on-call ticket wait
 #20 is TECH GLOBAL tickets
 #21 is Resolved/Closed tickets
@@ -74,7 +76,7 @@ def filtered_ai_ticket(ticket):
 
     add_requester(ticket)
     get_conversations(id)
-    get_service_request_info(ticket)
+    check_if_service_request(ticket)
 
     logs(f"Working on generating AI responses for ticket ID# {id}")
 
@@ -95,26 +97,21 @@ def filter_post_to_fs(ticket):
 
     if ai_attempts not in (15, 20, 21, 22, 25):
         
-        try:
+        email = ticketdb.get("ai_email").get("attempts")
+        note = ticketdb.get("ai_note").get("attempts")
+        ns = ticketdb.get("ai_next_steps").get("attempts")
+        put_fields = ticketdb.get("put_fields")
+        ai_attempts = ticketdb.get("ai_attempts")
 
-            email = (json.loads(ticketdb.get("ai_email"))).get("attempts")
-            note = (json.loads(ticketdb.get("ai_note"))).get("attempts")
-            ns = (json.loads(ticketdb.get("ai_next_steps"))).get("attempts")
-            put_fields = ticketdb.get("put_fields")
-            ai_attempts = ticketdb.get("ai_attempts")
+        if (
+                ((note is None or (note > 0 and note <=3)) 
+                or (email is None or (email > 0 and email <=3)) 
+                or (ns is None or (ns > 0 and ns <= 3))
+                or (put_fields is None or (put_fields > 0 and put_fields <=3)))
+                ):
 
-            if (
-                    ((note is None or (note > 0 and note <=3)) 
-                    or (email is None or (email > 0 and email <=3)) 
-                    or (ns is None or (ns > 0 and ns <= 3))
-                    or (put_fields is None or (put_fields > 0 and put_fields <=3)))
-                    ):
-
-                       filtered_post_ticket(ticket) 
-                       return True
-
-        except json.decoder.JSONDecodeError or TypeError:
-            logs("Cannot work on ticket because either [ai_email, ai_note, ai_next_steps] is not a JSON or is None in the database")
+                   filtered_post_ticket(ticket) 
+                   return True
 
 def filtered_post_ticket(ticket):
     id = ticket.get("id")
@@ -124,9 +121,9 @@ def filtered_post_ticket(ticket):
     ticket = query_ticket(id)
 
     field_put = ticket.get("put_fields")
-    ai_email = json.loads(ticket.get('ai_email'))
-    ai_note = json.loads(ticket.get('ai_note'))
-    ai_next_steps = json.loads(ticket.get('ai_next_steps'))
+    ai_email = ticket.get('ai_email')
+    ai_note = ticket.get('ai_note')
+    ai_next_steps = ticket.get('ai_next_steps')
 
     email_attempts = ai_email.get('attempts')
     note_attempts = ai_note.get('attempts')

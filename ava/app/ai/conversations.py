@@ -5,10 +5,12 @@ from app.sql.requesters_db import query_requester
 from app.freshservice.requesters_api import get_requester_by_id
 
 def convo_user_id_convert(tickets):
-    load_convo_for_current_ticket(tickets)
+    check_convo_for_current_ticket(tickets)
 
     user_ids = []
     for ticket in tickets:
+        if isinstance(ticket, tuple):
+            ticket = ticket[0]
         conversations = ticket.get("conversations")
         if conversations:
             for convo in conversations:
@@ -37,13 +39,9 @@ def convo_user_id_convert(tickets):
 
     return users
 
-def load_convo_for_current_ticket(tickets):
+def check_convo_for_current_ticket(tickets):
     c_ticket = tickets[0]
     c_convo = c_ticket.get("conversations")
 
     if not c_convo:
         tickets.pop(0)
-    else:
-        c_convo = json.loads(c_convo)
-        c_ticket["conversations"] = c_convo
-        tickets[0] = c_ticket

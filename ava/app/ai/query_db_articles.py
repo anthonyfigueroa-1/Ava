@@ -62,6 +62,9 @@ If a tie is met, have the newest article be the tie breaker.
 
 If the current ticket at hand is about phishing/spam email(s), an example being a ticket of a user forwarding an email to us asking about whether or not the
 email is spam/phishing, add on a 3rd article into the array, with the ID of that being 5000101148.
+
+If the current ticket at hand is about installing an application onto their computer, an example being a ticket of a user requesting IT to install or provide Admin Credentials
+to go ahead and approve the install of FoxIt or Axis Camera app. In this case, add on a 3rd article into the array, with the ID of that being 5000101261.
 """
 
 encoding = tiktoken.encoding_for_model("gpt-5")

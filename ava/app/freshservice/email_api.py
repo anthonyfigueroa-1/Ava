@@ -8,7 +8,7 @@ def post_email(ticket, ai_response):
     ticket_id = ticket.get("id")
     email = ai_response.get("ai_email")
 
-    check = is_vip(json.loads(ticket.get("json")))
+    check = is_vip(ticket.get("json"))
     is_null = check_if_null(email)
 
     if check is True or is_null is True:

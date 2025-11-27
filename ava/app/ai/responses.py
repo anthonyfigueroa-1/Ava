@@ -51,29 +51,32 @@ def first_response(ticket):
     #Use ticket database row info to feed into openai to avoid bloat. Feeding in as json still.
     ticket = query_ticket_response(id)
 
+    ticket_string = json.dumps(ticket)
+
     check_priority(ticket)
 
+    """Need to move below elsewhere to allow me to process to metadata"""
     images = get_images(ticket.get("raw_description"))
 
-    ticket_json = json.dumps(ticket)
+    #Will use AI to get most related solution articles and tickets found in DB
+    related_articles = ai_articles(ticket_string)
+    ticket_neighbors = ai_query_tickets(ticket_string)
 
-    related_articles = ai_articles(ticket_json)
-
-    ticket_neighbors = ai_query_tickets(ticket_json)
-
+    #Getting convo's one more time to ensure that Ava does not respond after agent has already messaged back on ticket.
     get_conversations(id)
 
+    #Creating list to get all user_id's that sent a message on current and related tickets.
     ticket_user_convert = [ticket]
-
     for ticket in ticket_neighbors:
         ticket_user_convert.append(ticket)
 
+    #Converts user_id's, if possible, to allow Ava to draw similarities to who's id is who's.
     users_in_convo = convo_user_id_convert(ticket_user_convert)
 
     ins = {
             "current_ticket":{
                 "description": "Current ticket you are working on writing a response for.",
-                "ticket": ticket_json,
+                "ticket": ticket,
                 },
             "related_tickets":{
                 "description": "Tickets found in database to be most relevant to current ticket.",
@@ -89,17 +92,18 @@ def first_response(ticket):
                 },
             }
 
+    #Got rid of str()
     ins = json.dumps(ins)
 
-    input = [{"role": "user", "content": str(ins)}]
+    input = [{"role": "user", "content": ins}]
 
-    tokens = len(encoding.encode(str(ins)))
+    tokens = len(encoding.encode(ins))
 
     logs(f"Token usage for response back: {tokens}")
 
     if images:
         try:
-            content = [{"type": "input_text", "text": str(ins)}]
+            content = [{"type": "input_text", "text": ins}]
             input = [{
                         "role": "user",
                         "content": content,

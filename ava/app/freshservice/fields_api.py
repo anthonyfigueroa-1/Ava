@@ -7,7 +7,6 @@ def put_fields(ticket_id):
     try:
         ticket = query_ticket(ticket_id)
         ticket_json = ticket.get("json")
-        ticket_json = json.loads(ticket_json)
         tags = ticket_json.get("tags")
         responder_id = ticket_json.get("responder_id", None)
         
