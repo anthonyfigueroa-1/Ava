@@ -1,3 +1,4 @@
+from app.ai.ticket_attachment_process import ticket_attachments_process
 from app.freshservice.conversations_api import get_conversations
 from openai import OpenAI, BadRequestError
 import os, json, tiktoken
@@ -45,6 +46,8 @@ def first_response(ticket):
 
     key = os.environ["OPENAIKEY"]
     client = OpenAI(api_key=key)
+
+    ticket_attachments_process(ticket)
 
     id = ticket.get("id")
 
@@ -101,40 +104,13 @@ def first_response(ticket):
 
     logs(f"Token usage for response back: {tokens}")
 
-    if images:
-        try:
-            content = [{"type": "input_text", "text": ins}]
-            input = [{
-                        "role": "user",
-                        "content": content,
-                        }]
-
-            seperate_images(images, content)
-
-            response = client.responses.create(
-                    model="gpt-5",
-                    instructions=instructions,
-                    input= input,
-                    text=text,
-                    timeout=100
-                    )
-
-        except BadRequestError:
-            response = client.responses.create(
-                model="gpt-5",
-                instructions=bad_img,
-                input=ins,
-                text=text,
-                timeout=100
-                )
-    else:
-        response = client.responses.create(
-                model="gpt-5",
-                instructions=instructions,
-                input=input,
-                text=text,
-                timeout=100
-                )
+    response = client.responses.create(
+        model="gpt-5",
+        instructions=instructions,
+        input=input,
+        text=text,
+        timeout=100
+        )
 
     response = response.output_text
 
@@ -176,15 +152,6 @@ def check_if_first_response(responses, ticket_id):
         #No extra attempts needed for generating ai response
         attempts = 0
         add_ai_response(responses, attempts, ticket_id)
-
-def seperate_images(images, content):
-    for image in images:
-        ai_json = {
-                    "type": "input_image",
-                    "image_url": image,
-                    }
-
-        content.append(ai_json)
 
 def check_priority(ticket) -> None:
     p_dict = {

@@ -175,6 +175,13 @@ def add_service_request(items, id):
                         UPDATE tickets SET service_request = %s WHERE id = %s
                         """, (Jsonb(items), id))
 
+def add_metadata(metadata, id):
+    with psycopg.connect(tickets_db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        UPDATE tickets SET metadata = %s WHERE id = %s
+                        """, (Jsonb(metadata), id))
+
 def update_ticket(ticket):
     id = ticket.get("id")
     priority = ticket.get("priority")

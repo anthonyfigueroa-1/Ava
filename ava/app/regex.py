@@ -8,6 +8,6 @@ def seperate_responses(ai_response):
         return responses
 
 def get_images(raw_description):
-    match = re.findall(r'img\ssrc\=\"([^"]+)\"', raw_description)
+    match = re.findall(r'src\=\"(https\:[^"]+)\"', raw_description)
 
     return match
