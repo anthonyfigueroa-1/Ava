@@ -1,6 +1,6 @@
 services:
   ava:
-    image: air:latest
+    image: ava:test.2
     build: ./ava
     container_name: ava
     working_dir: /app
@@ -9,7 +9,7 @@ services:
     logging:
       driver: "json-file"
     env_file:
-      - ./ava/.env
+      - ./ava.env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

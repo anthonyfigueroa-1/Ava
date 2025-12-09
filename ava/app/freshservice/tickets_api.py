@@ -9,13 +9,13 @@ def get_tickets():
         key = os.environ["FSKEY"]
 
         response = requests.get(url, auth=HTTPBasicAuth(key, "X"))
-        tickets = response.json()["tickets"]
 
         if response.status_code != 200:
             logs("Something went wrong getting batch of tickets.")
             logs(f"Status code: {response.status_code}")
 
         else:
+            tickets = response.json()["tickets"]
             logs("Got batch of tickets for group ALL IT")
             return tickets
 

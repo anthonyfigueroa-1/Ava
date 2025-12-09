@@ -1,5 +1,5 @@
 from openai import OpenAI, conversations
-import json, os, tiktoken
+import json, os, tiktoken, random
 
 from app.sql.tickets_db import query_tickets_ai, query_tickets_ai_slim
 from app.logs import logs
@@ -104,17 +104,21 @@ def ai_query_tickets(ticket) -> list | None:
                         tickets = query_tickets_ai(ids)
                     else:
                         logs("Could not find any relevant tickets")
-                        return
+                        return []
 
                     if tickets:
                         logs("Returning relevant tickets to AI agent for better response")
+                        tokens = len(encoding.encode(str(ticket)))
+                        if tokens > 200000:
+                            logs("Tickets exceeded token limit of 200,000! Will randomly remove one ticket")
+                            tickets_num = (len(tickets) - 1)
+                            num = random.randint(0, tickets_num)
+                            tickets = tickets.pop(num)
                         return tickets 
                         
                     else:
                         logs("Query tickets failed")
                         return []
-
-
 
     logs("Query tickets failed right away")
     return [] 
@@ -145,7 +149,7 @@ def ai_query_slim(ticket: dict) -> list | None:
                     id = dict_ticket.get("id")
                     tickets = query_tickets_ai_slim(keywords, id, requester_name, limits)
                 else:
-                    logs("Could not find any relevant tickets")
+                    logs("Could not find any relevant slim tickets")
                     return
 
                 if tickets:
@@ -157,8 +161,7 @@ def ai_query_slim(ticket: dict) -> list | None:
                                 })
                         })
                 else:
-                    ins = []
+                    logs("Could not find any relevant slim tickets")
+                    return
 
     return ins
-
-

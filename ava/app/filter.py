@@ -2,6 +2,7 @@ from app.freshservice.email_api import post_email
 from app.freshservice.fields_api import put_fields
 from app.freshservice.private_note_api import post_private_note
 from app.freshservice.service_request_api import get_service_request_info
+from app.freshservice.tickets_api import get_one_ticket
 from app.sql.tickets_db import query_ticket, update_ai_attempts, add_requester
 from app.freshservice.conversations_api import get_conversations
 from app.ai.responses import first_response
@@ -74,6 +75,7 @@ def filter_initial_tickets(ticket):
 def filtered_ai_ticket(ticket):
     id = ticket.get("id")
 
+    get_one_ticket(id)
     add_requester(ticket)
     get_conversations(id)
     check_if_service_request(ticket)

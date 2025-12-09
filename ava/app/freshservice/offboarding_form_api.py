@@ -16,7 +16,7 @@ def get_offboarding_form(ticket: dict) -> None:
     try:
         response = get(url, auth=HTTPBasicAuth(key, 'X'), timeout=(20,20))
 
-        if response != 200:
+        if response.status_code != 200:
             logs(f"Failed to get offboarding form for ticket ID# {id} with code of {response.status_code}")
         else:
             response = response.json()["ticket"]

@@ -1,4 +1,4 @@
-import json, os, tiktoken
+import json, os, tiktoken, random
 from openai import OpenAI
 
 from app.sql.solution_articles_db import ai_query_articles_id, query_article
@@ -106,6 +106,12 @@ def ai_articles(ticket):
                         articles = get_some_articles(ids)
 
                     if articles:
+                        tokens = len(encoding.encode(str(articles)))
+                        if tokens > 200000:
+                            logs("Articles exceeded token limit of 200,000! Will randomly remove one article")
+                            article_num = (len(articles) - 1)
+                            num = random.randint(0, article_num)
+                            articles = articles.pop(num)
                         for article in articles:
                             article = article[0]
                             process_photos(article)

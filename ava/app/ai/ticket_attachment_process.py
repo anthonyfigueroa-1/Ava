@@ -33,7 +33,10 @@ def ticket_attachments_process(ticket):
     if content:
         input += content
         response = get_ai_attachment_response(input)
-        add_metadata(response.output_text, id)
+
+        if response:
+            if response.output_text:
+                add_metadata(response.output_text, id)
            
 def seperate_images(raw_description, content):
     images = get_images(raw_description)
@@ -100,7 +103,8 @@ def get_ai_attachment_response(content):
                 text=text
                 )
 
-        return response
+        if response:
+            return response
 
     except openai.BadRequestError:
         pass 

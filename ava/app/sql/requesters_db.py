@@ -49,3 +49,17 @@ def query_requester(id):
             return data[0]
         else:
             return None
+
+def combine_requester_name(requester_row: dict) -> str | None:
+    if requester_row:
+        first_name = requester_row.get("first_name")
+        last_name = requester_row.get("last_name")
+        id = requester_row.get("id")
+        if first_name and last_name:
+            full_name = [first_name, last_name]
+            full_name = ' '.join(full_name)
+            return full_name
+        elif first_name and not last_name:
+            return first_name
+        else:
+            return str(id)

@@ -3,6 +3,7 @@
 AI_Responder.egg-info/
 app/
 .dockerignore
+*.env
 .env
 .gitignore
 docker-compose.uml

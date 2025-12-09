@@ -18,7 +18,6 @@ def main() -> None:
 
         for ticket in tickets:
             id = ticket[0]
-            status = ticket[1]
 
             ticket = get_one_ticket(id)
             

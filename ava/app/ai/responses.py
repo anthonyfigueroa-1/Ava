@@ -10,6 +10,7 @@ from app.ai.query_db_tickets import ai_query_tickets
 from app.ai.query_db_articles import ai_articles
 from app.ai.conversations import convo_user_id_convert
 from app.ai import instructions
+from app.ai.router import query_db_router
 
 next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
 
@@ -40,26 +41,26 @@ text = {
 encoding = tiktoken.encoding_for_model("gpt-5")
 
 def first_response(ticket):
-    bad_img = f"""{instructions} \n(This is a special instruction... You are recieving this because an image(s) failed to import so a new OPENAI api request needs to be made without the images.) 
-    If this is the case, take a look at raw_description of the json I am inputting. If there is 'src img' section, look to see if it is located within the signature or body of the description. 
-    If it is in the signature, ignore it and don't mention it, if it is in the body, let the user know that their image did not get recieved properly and for them to resend it."""
-
     key = os.environ["OPENAIKEY"]
     client = OpenAI(api_key=key)
 
-    ticket_attachments_process(ticket)
-
     id = ticket.get("id")
 
+    ticket_attachments_process(ticket)
+
     #Use ticket database row info to feed into openai to avoid bloat. Feeding in as json still.
-    ticket = query_ticket_response(id)
+    ticket_row = query_ticket_response(id)
 
-    ticket_string = json.dumps(ticket)
+    sid = ticket_row.get("id")
+    ssubject = ticket_row.get("subject")
 
-    check_priority(ticket)
+    ticket_string = json.dumps(ticket_row)
 
-    """Need to move below elsewhere to allow me to process to metadata"""
-    images = get_images(ticket.get("raw_description"))
+    check_priority(ticket_row)
+
+    relevant_info = query_db_router(ticket_row)
+
+    print(relevant_info)
 
     #Will use AI to get most related solution articles and tickets found in DB
     related_articles = ai_articles(ticket_string)
@@ -69,17 +70,22 @@ def first_response(ticket):
     get_conversations(id)
 
     #Creating list to get all user_id's that sent a message on current and related tickets.
-    ticket_user_convert = [ticket]
-    for ticket in ticket_neighbors:
-        ticket_user_convert.append(ticket)
+    ticket_user_convert = [ticket_row]
+    for tick in ticket_neighbors:
+        ticket_user_convert.append(tick)
 
     #Converts user_id's, if possible, to allow Ava to draw similarities to who's id is who's.
     users_in_convo = convo_user_id_convert(ticket_user_convert)
 
+    if ticket_row.get("id") != id:
+        logs(f"A mixup happened with the current ticket, current ticket is somehow {ticket_row.get('id')} instead of {id}", "error")
+        logs(f"Correcting mixup by querying ticket ID# {id}", "error")
+        ticket_row = query_ticket_response(id)
+
     ins = {
             "current_ticket":{
                 "description": "Current ticket you are working on writing a response for.",
-                "ticket": ticket,
+                "ticket": ticket_row,
                 },
             "related_tickets":{
                 "description": "Tickets found in database to be most relevant to current ticket.",
@@ -95,8 +101,7 @@ def first_response(ticket):
                 },
             }
 
-    #Got rid of str()
-    ins = json.dumps(ins)
+    ins = json.dumps(ins, indent=4)
 
     input = [{"role": "user", "content": ins}]
 

@@ -4,7 +4,7 @@ from datetime import datetime
 from psycopg.types.json import Jsonb
 
 from app.freshservice.requesters_api import get_requester
-from app.sql.requesters_db import query_requester
+from app.sql.requesters_db import combine_requester_name, query_requester
 from app.sql.departments_db import query_departments_table
 from app.logs import logs
 
@@ -48,23 +48,25 @@ def add_tickets_table(tickets):
                 priority = ticket.get("priority")
                 status = ticket.get("status")
 
+                responder_id = ticket.get("responder_id")
+                responder_row = query_requester(responder_id)
+                responder = combine_requester_name(responder_row)
+
                 #enter time as UNIX time
                 time = datetime.strptime(ticket.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
                 unixtime = time.timestamp()
 
                 cur.execute("""INSERT INTO tickets 
-                            (id, department, subject, description, raw_description, ticket_created, json, priority, status) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            (id, department, subject, description, raw_description, ticket_created, json, priority, status, responder) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             ON CONFLICT (id) DO NOTHING
                             RETURNING id;""",
-                            (id, department, subject, description, raw_description, unixtime, Jsonb(ticket), priority, status))
+                            (id, department, subject, description, raw_description, unixtime, Jsonb(ticket), priority, status, responder))
 
                 result = cur.fetchone()
 
                 if not result:
                     update_ticket(ticket)
-
-
 
 def add_ai_response(ai_response, attempts, id):
     ai_email = ai_response.get("email")
@@ -187,10 +189,13 @@ def update_ticket(ticket):
     priority = ticket.get("priority")
     status = ticket.get("status")
 
+    responder_id = ticket.get("responder_id")
+    responder_row = query_requester(responder_id)
+    responder = combine_requester_name(responder_row)
+
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE tickets SET priority = %s, status = %s WHERE id = %s", (priority, status, id))
-
+            cur.execute("UPDATE tickets SET priority = %s, status = %s, responder = %s WHERE id = %s", (priority, status, responder, id))
 
 def update_ai_email(id, ai_email):
    with psycopg.connect(tickets_db) as conn:
