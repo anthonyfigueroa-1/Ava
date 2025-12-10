@@ -1,7 +1,7 @@
 import json, os, tiktoken, random
 from openai import OpenAI
 
-from app.sql.solution_articles_db import ai_query_articles_id, query_article
+from app.sql.solution_articles_db import ai_query_articles_id, query_article, ai_query_articles_slim
 from app.freshservice.solution_articles import get_some_articles, search_articles
 from app.ai.article_image_process import process_photos
 from app.logs import logs
@@ -56,8 +56,8 @@ You're gonna want the keyword to be the best possible thing that'll match the ti
 """
 
 fat_instructions="""
-From the list of solutions articles you have been given from the previous tool output, go ahead and refine the articles.
-Choose the top 2 article ID's that are the absolute closest in regards to relevance to the current ticket at hand.
+From the list of solutions articles you have been given in related slim articles, go ahead and refine the articles.
+Choose the top 2 article ID's that are the absolute closest in regards to relevance to the current ticket.
 If a tie is met, have the newest article be the tie breaker.
 
 If the current ticket at hand is about phishing/spam email(s), an example being a ticket of a user forwarding an email to us asking about whether or not the
@@ -69,22 +69,26 @@ to go ahead and approve the install of FoxIt or Axis Camera app. In this case, a
 
 encoding = tiktoken.encoding_for_model("gpt-5")
 
-def ai_articles(ticket):
+def ai_articles(ticket, keyword):
     logs("Starting search for relevant Solutions Articles")
-    ins = ai_articles_slim(ticket)
-   
-    if not ins:
-        message = f"No relevant articles were able to be found"
-        logs(message)
-        return message
+    
+    ticket_json = json.dumps(ticket, indent=4)
 
+    slim_articles = ai_articles_slim(ticket_json, keyword)
+   
+#    if not ins:
+#        message = f"No relevant articles were able to be found"
+#        logs(message)
+#        return message
+
+    ins = [{"role": "user", "content": f"Current ticket:\n{ticket_json}\n\nRelated slim articles:\n{slim_articles}"}] 
 
     tokens = len(encoding.encode(str(ins)))
 
     logs(f"Tokens of input for articles: {tokens}")
 
     response = client.responses.create(
-            model="gpt-5",
+            model="gpt-4.1",
             input=ins,
             tools=tools,
             tool_choice={"type": "function", "name": "ai_query_articles"},
@@ -99,6 +103,7 @@ def ai_articles(ticket):
                 ids = args.get("ids")
 
                 if ids:
+                    print(f"Grabbing related articles with ID#'s of {ids}")
                     articles = ai_query_articles_id(ids)
 
                     if not articles:
@@ -120,46 +125,47 @@ def ai_articles(ticket):
                         return articles
 
 
-def ai_articles_slim(ticket):
-    ins = [{"role": "user", "content": ticket}]
+def ai_articles_slim(ticket, keyword):
+#    ins = [{"role": "user", "content": ticket}]
+#
+#    response = client.responses.create(
+#            model="gpt-5",
+#            input=ins,
+#            tools=tools,
+#            tool_choice={"type": "function", "name": "ai_query_articles_slim"},
+#            instructions=slim_instructions,
+#            parallel_tool_calls=False,
+#            )
+#
+#    ins += response.output
+#
+#    for item in response.output:
+#        if item.type == "function_call":
+#            if item.name == "ai_query_articles_slim":
+#                args = (json.loads(item.arguments))
+#                keyword = args.get("keyword")
+#
+#                if keyword:
+    articles = search_articles(keyword)
+    articles = ai_query_articles_slim(keyword)
+#                    
+#                    #if not articles:
+#                        #logs("Was not able to find any relevant articles for this ticket in the local DB, going to search FS now")
 
-    response = client.responses.create(
-            model="gpt-5",
-            input=ins,
-            tools=tools,
-            tool_choice={"type": "function", "name": "ai_query_articles_slim"},
-            instructions=slim_instructions,
-            parallel_tool_calls=False,
-            )
+    if articles:
+        slim_articles = []
+        for article in articles:
+            article = article[0]
+            article = query_article(article.get("id"))
+            article["img_metadata"] = ""
+            slim_articles.append(article)
 
-    ins += response.output
+#                        ins.append({
+#                            "type": "function_call_output",
+#                            "call_id": item.call_id,
+#                            "output": json.dumps({
+#                                "kb_articles": slim_articles
+#                                })
+#                            })
 
-    for item in response.output:
-        if item.type == "function_call":
-            if item.name == "ai_query_articles_slim":
-                args = (json.loads(item.arguments))
-                keyword = args.get("keyword")
-
-                if keyword:
-                    #articles = ai_query_articles_slim(keyword)
-                    
-                    #if not articles:
-                        #logs("Was not able to find any relevant articles for this ticket in the local DB, going to search FS now")
-                    articles = search_articles(keyword)
-
-                    if articles:
-                        slim_articles = []
-                        for article in articles:
-                            article = query_article(article.get("id"))
-                            article["img_metadata"] = ""
-                            slim_articles.append(article)
-
-                        ins.append({
-                            "type": "function_call_output",
-                            "call_id": item.call_id,
-                            "output": json.dumps({
-                                "kb_articles": slim_articles
-                                })
-                            })
-
-                        return ins
+        return json.dumps(slim_articles) 

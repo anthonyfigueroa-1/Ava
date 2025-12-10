@@ -269,7 +269,7 @@ def query_ticket_response(id):
 
     return data
 
-def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str, limit: int) -> list | None:
+def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str) -> list | None:
     query = f"""
     WITH keywords AS (
             SELECT unnest(%s::text[]) as keyword
@@ -298,14 +298,14 @@ def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str, li
                 WHERE id != %s AND score IS NOT null
                 ORDER BY (CASE WHEN requester_email = %s THEN 1 ELSE 0 END) DESC,
                 COALESCE(score, 0) DESC
-                LIMIT %s;
+                LIMIT 30;
     """
 
     keywords = [f"%{keyword}%" for keyword in keywords]
 
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:
-            cur.execute(query, [keywords, id, requester_email, limit])
+            cur.execute(query, [keywords, id, requester_email])
             data = cur.fetchall()
 
     if data is None:

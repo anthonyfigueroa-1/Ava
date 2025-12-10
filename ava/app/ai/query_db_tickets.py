@@ -66,102 +66,105 @@ For any tickets containing a bookings link, do your best to locate and reference
 """
 
 instruct2 = """ 
-Using previous tools output, narrow down specific tickets that could be useful for generating a more tailored response back, in the request after this one.
+Using the given related slim tickets and comparing them to the current ticket, 
+narrow down specific tickets that could be useful for generating a more tailored response back, in the request after this one.
 Tickets don't have to be super related, anything that'll help point you in the right direction to help the next request tailor a better response.
 """
 
 encoding = tiktoken.encoding_for_model("gpt-5")
 
-def ai_query_tickets(ticket) -> list | None:
+def ai_query_tickets(ticket, keywords) -> list | None:
     logs("Starting search for any relevant tickets")
-    ins = ai_query_slim(ticket)
+    slim_tickets = ai_query_slim(ticket, keywords)
 
-    if ins:
-        tokens = len(encoding.encode(str(ins)))
-        logs(f"Token usage for related tickets: {tokens}")
+    ticket_json = json.dumps(ticket, indent=4)
 
-        response = client.responses.create(
-                model = "gpt-5",
-                tools=tools,
-                tool_choice= {"type": "function", "name":"query_ids"},
-                instructions=instruct2,
-                parallel_tool_calls=False,
-                input=ins,
-                )
+    ins = [{"role": "user", "content": f"Current ticket:\n{ticket_json}\n\nRelated Slim Tickets:\n{slim_tickets}"}]
 
-        ins = []
-
-        ins += ([{"role": "user", "content": ticket}])
-
-        ins += response.output
-
-        for item in response.output:
-            if item.type == "function_call":
-                if item.name == "query_ids":
-                    args = json.loads(item.arguments)
-                    ids = args.get("ids")
-                    if ids:
-                        tickets = query_tickets_ai(ids)
-                    else:
-                        logs("Could not find any relevant tickets")
-                        return []
-
-                    if tickets:
-                        logs("Returning relevant tickets to AI agent for better response")
-                        tokens = len(encoding.encode(str(ticket)))
-                        if tokens > 200000:
-                            logs("Tickets exceeded token limit of 200,000! Will randomly remove one ticket")
-                            tickets_num = (len(tickets) - 1)
-                            num = random.randint(0, tickets_num)
-                            tickets = tickets.pop(num)
-                        return tickets 
-                        
-                    else:
-                        logs("Query tickets failed")
-                        return []
-
-    logs("Query tickets failed right away")
-    return [] 
-
-def ai_query_slim(ticket: dict) -> list | None:
-    ins = [{"role": "user", "content": ticket}]
+    tokens = len(encoding.encode(str(ins)))
+    logs(f"Token usage for related tickets: {tokens}")
 
     response = client.responses.create(
-            model = "gpt-5",
+            model = "gpt-4.1",
             tools=tools,
-            tool_choice= {"type": "function", "name":"query_tickets_slim"},
-            instructions=instruct1,
+            tool_choice= {"type": "function", "name":"query_ids"},
+            instructions=instruct2,
             parallel_tool_calls=False,
             input=ins,
             )
+
+    ins = []
+
+    ins += ([{"role": "user", "content": ticket}])
 
     ins += response.output
 
     for item in response.output:
         if item.type == "function_call":
-            if item.name == "query_tickets_slim":
+            if item.name == "query_ids":
                 args = json.loads(item.arguments)
-                keywords = args.get("keywords")
-                limits = args.get("limits")
-                requester_name = args.get("requester_name")
-                if keywords and limits:
-                    dict_ticket = json.loads(ticket)
-                    id = dict_ticket.get("id")
-                    tickets = query_tickets_ai_slim(keywords, id, requester_name, limits)
+                ids = args.get("ids")
+                if ids:
+                    print(f"Grabbing related tickets with ID#'s of {ids}")
+                    tickets = query_tickets_ai(ids)
                 else:
-                    logs("Could not find any relevant slim tickets")
-                    return
+                    logs("Could not find any relevant tickets")
+                    return []
 
                 if tickets:
-                    ins.append({
-                        "type": "function_call_output",
-                        "call_id": item.call_id,
-                        "output": json.dumps({
-                                "tickets": tickets
-                                })
-                        })
-                else:
-                    logs("Could not find any relevant slim tickets")
-                    return
+                    logs("Returning relevant tickets to AI agent for better response")
+                    tokens = len(encoding.encode(str(ticket)))
+                    if tokens > 200000:
+                        logs("Tickets exceeded token limit of 200,000! Will randomly remove one ticket")
+                        tickets_num = (len(tickets) - 1)
+                        num = random.randint(0, tickets_num)
+                        tickets = tickets.pop(num)
+                    return tickets 
+                    
+    logs("Query tickets failed right away")
+    return [] 
 
-    return ins
+def ai_query_slim(ticket: dict, keywords) -> list | None:
+#    ins = [{"role": "user", "content": ticket}]
+
+#    response = client.responses.create(
+#            model = "gpt-5",
+#            tools=tools,
+#            tool_choice= {"type": "function", "name":"query_tickets_slim"},
+#            instructions=instruct1,
+#            parallel_tool_calls=False,
+#            input=ins,
+#            )
+#
+#    ins += response.output
+#
+#    for item in response.output:
+#        if item.type == "function_call":
+#            if item.name == "query_tickets_slim":
+#                args = json.loads(item.arguments)
+#                keywords = args.get("keywords")
+#                limits = args.get("limits")
+#                requester_name = args.get("requester_name")
+#                if keywords and limits:
+#                    dict_ticket = json.loads(ticket)
+#                    id = dict_ticket.get("id")
+    id = ticket.get("id")
+    requester_name = ticket.get("requester_name")
+    tickets = query_tickets_ai_slim(keywords, id, requester_name)
+#                else:
+#                    logs("Could not find any relevant slim tickets")
+#                    return
+
+#                if tickets:
+#                    ins.append({
+#                        "type": "function_call_output",
+#                        "call_id": item.call_id,
+#                        "output": json.dumps({
+#                                "tickets": tickets
+#                                })
+#                        })
+#                else:
+#                    logs("Could not find any relevant slim tickets")
+#                    return
+
+    return tickets

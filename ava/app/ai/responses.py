@@ -60,11 +60,12 @@ def first_response(ticket):
 
     relevant_info = query_db_router(ticket_row)
 
-    print(relevant_info)
+    ticket_neighbors = relevant_info.get("tickets")
+    related_articles = relevant_info.get("articles")
 
     #Will use AI to get most related solution articles and tickets found in DB
-    related_articles = ai_articles(ticket_string)
-    ticket_neighbors = ai_query_tickets(ticket_string)
+    #related_articles = ai_articles(ticket_string)
+    #ticket_neighbors = ai_query_tickets(ticket_string)
 
     #Getting convo's one more time to ensure that Ava does not respond after agent has already messaged back on ticket.
     get_conversations(id)

@@ -56,12 +56,15 @@ def query_article(id):
         article = article[0]
         return article
 
-def ai_query_articles_slim(keyword: str) -> list[dict] | None:
+def ai_query_articles_slim(keywords: list[str]) -> list[dict] | None:
+
+    keywords = [f"%{keyword}%" for keyword in keywords]
+
     with psycopg.connect(db) as conn:
         with conn.cursor() as cur:
             cur.execute("""
                         WITH kw as (
-                            SELECT %s as keyword
+                            SELECT unnest(%s::text[]) as keyword
                             ),
                         cleaned as (
                             SELECT s.id,
@@ -76,7 +79,8 @@ def ai_query_articles_slim(keyword: str) -> list[dict] | None:
                             FROM cleaned c
                             LEFT JOIN LATERAL (
                                 SELECT keyword FROM kw
-                                WHERE c.clean_desc ILIKE keyword
+                                WHERE c.clean_desc ILIKE keyword 
+                                OR c.title ILIKE keyword
                                 ) m ON TRUE
                             GROUP BY c.id, c.title, c.clean_desc, c.keywords
                             )
@@ -86,8 +90,9 @@ def ai_query_articles_slim(keyword: str) -> list[dict] | None:
                             WHERE score IS NOT null
                             ORDER BY score DESC,
                             COALESCE(score, 0) DESC
+                            LIMIT 15
                         """,
-                        (keyword,)
+                        (keywords,)
                         )
                         
             articles = cur.fetchall()
