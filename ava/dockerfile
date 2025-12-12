@@ -3,5 +3,5 @@ WORKDIR /app
 COPY ./requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install --user -r requirements.txt
-COPY ./dist/ava-2.2-py3-none-any.whl .
-RUN pip install ava-2.2-py3-none-any.whl
+COPY ./dist/ava-2.3-py3-none-any.whl .
+RUN pip install ava-2.3-py3-none-any.whl

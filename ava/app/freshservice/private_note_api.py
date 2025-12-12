@@ -71,3 +71,38 @@ def check_if_null(ai_response, key):
     
     if not message:
         return False
+
+def misc_private_note(ticket_id, note):
+    url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}/notes"
+    fskey = os.environ["FSKEY"]
+
+    header = {
+            "Content-Type": "application/json"
+            }
+
+    payload = {
+            "body": note
+            }
+
+    response = requests.post(url=url, json=payload, headers=header, auth=HTTPBasicAuth(fskey, 'X'), timeout=(20,20))
+
+    if response.status_code != 201:
+        logs(f"Failed to post misc note to ticket ID# {ticket_id} with status code of {response.status_code}")
+
+    else:
+        logs(f"Successfully posted note letting other agents know Ava is working on this ticket")
+        note = response.json()["conversation"]
+        note_id = note.get("id")
+        return note_id
+
+def delete_private_note(note_id):
+    url = f"https://eastwest.freshservice.com/api/v2/conversations/{note_id}"
+    fskey = os.environ["FSKEY"]
+
+    response = requests.delete(url=url, auth=HTTPBasicAuth(fskey, "X"), timeout=(20,20))
+
+    if response.status_code != 204:
+        logs(f"Failed to delete note ID {note_id}, with status code of {response.status_code}")
+
+    else:
+        logs(f"Successfully deleted note ID {note_id}")

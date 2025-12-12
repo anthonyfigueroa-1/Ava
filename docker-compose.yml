@@ -1,6 +1,6 @@
 services:
   ava:
-    image: ava:test.2
+    image: ava:latest
     build: ./ava
     container_name: ava
     working_dir: /app

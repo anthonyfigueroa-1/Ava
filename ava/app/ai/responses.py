@@ -72,8 +72,9 @@ def first_response(ticket):
 
     #Creating list to get all user_id's that sent a message on current and related tickets.
     ticket_user_convert = [ticket_row]
-    for tick in ticket_neighbors:
-        ticket_user_convert.append(tick)
+    if ticket_neighbors:
+        for tick in ticket_neighbors:
+            ticket_user_convert.append(tick)
 
     #Converts user_id's, if possible, to allow Ava to draw similarities to who's id is who's.
     users_in_convo = convo_user_id_convert(ticket_user_convert)

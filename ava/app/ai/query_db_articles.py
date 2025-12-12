@@ -65,6 +65,7 @@ email is spam/phishing, add on a 3rd article into the array, with the ID of that
 
 If the current ticket at hand is about installing an application onto their computer, an example being a ticket of a user requesting IT to install or provide Admin Credentials
 to go ahead and approve the install of FoxIt or Axis Camera app. In this case, add on a 3rd article into the array, with the ID of that being 5000101261.
+To put simply, if ticket is about install/installing app, add 5000101261 to 'ids' array.
 """
 
 encoding = tiktoken.encoding_for_model("gpt-5")
@@ -103,7 +104,7 @@ def ai_articles(ticket, keyword):
                 ids = args.get("ids")
 
                 if ids:
-                    print(f"Grabbing related articles with ID#'s of {ids}")
+                    logs(f"Grabbing related articles with ID#'s of {ids}", "info")
                     articles = ai_query_articles_id(ids)
 
                     if not articles:
@@ -146,13 +147,14 @@ def ai_articles_slim(ticket, keyword):
 #                keyword = args.get("keyword")
 #
 #                if keyword:
-    articles = search_articles(keyword)
+    search_articles(keyword)
     articles = ai_query_articles_slim(keyword)
 #                    
 #                    #if not articles:
 #                        #logs("Was not able to find any relevant articles for this ticket in the local DB, going to search FS now")
 
     if articles:
+        logs(f"Articles found: {len(articles)}", "info")
         slim_articles = []
         for article in articles:
             article = article[0]

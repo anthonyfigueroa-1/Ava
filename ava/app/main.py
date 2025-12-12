@@ -2,22 +2,17 @@ import faulthandler, signal, sys
 faulthandler.enable()
 faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True)
 
-from app.freshservice.tickets_api import get_one_ticket_test, get_tickets, get_one_ticket
-from app.freshservice.email_api import post_email
-from app.freshservice.private_note_api import post_private_note
-from app.freshservice.conversations_api import get_conversations
-from app.freshservice.fields_api import put_fields
+from app.freshservice.tickets_api import get_one_ticket_test, get_tickets
 from app.sql.create_db import create_db
-from app.sql.tickets_db import create_tickets_table, add_tickets_table, query_ticket
+from app.sql.tickets_db import create_tickets_table, add_tickets_table
 from app.sql.departments_db import create_departments_table
 from app.sql.requesters_db import create_requesters_table
-from app.ai.responses import first_response
 from app.logs import logs 
 from app.filter import filter_initial_tickets, filter_post_to_fs
 from app.arg_parse import parse_args
-from app.sharepoint.ai_instructions import get_sp_instructions, load_cached_instructions
+from app.sharepoint.ai_instructions import get_sp_instructions
 
-import sys, time, json
+import sys, time
 
 def main():
     #Create arg parse to test individual tickets. 

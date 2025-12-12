@@ -1,6 +1,6 @@
 from app.freshservice.email_api import post_email
 from app.freshservice.fields_api import put_fields
-from app.freshservice.private_note_api import post_private_note
+from app.freshservice.private_note_api import delete_private_note, misc_private_note, post_private_note
 from app.freshservice.service_request_api import get_service_request_info
 from app.freshservice.tickets_api import get_one_ticket
 from app.sql.tickets_db import query_ticket, update_ai_attempts, add_requester
@@ -33,7 +33,7 @@ def filter_initial_tickets(ticket):
     attempts = ticket_class.get("ai_attempts")
     ticket_created = ticket_class.get("ticket_created")
     status = ticket_class.get("status")
-#    responder_id = ticket_class.get("responder_id")
+    responder = ticket_class.get("responder")
 
     requester_id = ticket.get("requester_id")
     tech_global = 5000163334
@@ -42,8 +42,8 @@ def filter_initial_tickets(ticket):
         if requester_id == tech_global:
             update_ai_attempts(id, 20) #20 is code for TECH GLOBAL requester
             return
-#        elif responder_id:
-#            update_ai_attempts(id, 22) 
+        elif responder:
+            update_ai_attempts(id, 22) 
         elif status in (4, 5):
             update_ai_attempts(id, 21)
             return
@@ -75,6 +75,9 @@ def filter_initial_tickets(ticket):
 def filtered_ai_ticket(ticket):
     id = ticket.get("id")
 
+    #Let's any agents know that this tickets is being worked on
+    note_id = misc_private_note(id, "I am currently working on this ticket and will post a response back soon.")
+
     get_one_ticket(id)
     add_requester(ticket)
     get_conversations(id)
@@ -90,6 +93,8 @@ def filtered_ai_ticket(ticket):
         return
 
     first_response(ticket)
+
+    delete_private_note(note_id)
 
 def filter_post_to_fs(ticket):
     id = ticket.get("id")

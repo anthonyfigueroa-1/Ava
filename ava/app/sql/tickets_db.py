@@ -133,8 +133,6 @@ def add_json(ticket):
         with conn.cursor() as cur:
             cur.execute("UPDATE tickets SET json = %s WHERE id = %s", (json.dumps(ticket), id))
 
-    logs(f"Updated ticket ID# {id} json field")
-
 def add_requester(ticket):
     ticket_id = ticket.get("id")
     requester_id = ticket.get("requester_id")
@@ -192,6 +190,9 @@ def update_ticket(ticket):
     responder_id = ticket.get("responder_id")
     responder_row = query_requester(responder_id)
     responder = combine_requester_name(responder_row)
+
+    if not responder:
+        responder = responder_id
 
     with psycopg.connect(tickets_db) as conn:
         with conn.cursor() as cur:

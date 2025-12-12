@@ -105,7 +105,7 @@ def ai_query_tickets(ticket, keywords) -> list | None:
                 args = json.loads(item.arguments)
                 ids = args.get("ids")
                 if ids:
-                    print(f"Grabbing related tickets with ID#'s of {ids}")
+                    logs(f"Grabbing related tickets with ID#'s of {ids}", "info")
                     tickets = query_tickets_ai(ids)
                 else:
                     logs("Could not find any relevant tickets")
@@ -125,46 +125,9 @@ def ai_query_tickets(ticket, keywords) -> list | None:
     return [] 
 
 def ai_query_slim(ticket: dict, keywords) -> list | None:
-#    ins = [{"role": "user", "content": ticket}]
-
-#    response = client.responses.create(
-#            model = "gpt-5",
-#            tools=tools,
-#            tool_choice= {"type": "function", "name":"query_tickets_slim"},
-#            instructions=instruct1,
-#            parallel_tool_calls=False,
-#            input=ins,
-#            )
-#
-#    ins += response.output
-#
-#    for item in response.output:
-#        if item.type == "function_call":
-#            if item.name == "query_tickets_slim":
-#                args = json.loads(item.arguments)
-#                keywords = args.get("keywords")
-#                limits = args.get("limits")
-#                requester_name = args.get("requester_name")
-#                if keywords and limits:
-#                    dict_ticket = json.loads(ticket)
-#                    id = dict_ticket.get("id")
     id = ticket.get("id")
     requester_name = ticket.get("requester_name")
     tickets = query_tickets_ai_slim(keywords, id, requester_name)
-#                else:
-#                    logs("Could not find any relevant slim tickets")
-#                    return
-
-#                if tickets:
-#                    ins.append({
-#                        "type": "function_call_output",
-#                        "call_id": item.call_id,
-#                        "output": json.dumps({
-#                                "tickets": tickets
-#                                })
-#                        })
-#                else:
-#                    logs("Could not find any relevant slim tickets")
-#                    return
+    logs(f"Tickets found: {len(tickets)}", "info")
 
     return tickets
