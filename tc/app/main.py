@@ -26,8 +26,12 @@ def main() -> None:
                 continue
 
             conversation = get_ticket_conversations(ticket)
-            ai_resolution_note(ticket)
+
             update_ticket_table(ticket, conversation)
+            
+            status = ticket.get("status")
+            if status == 5:
+                ai_resolution_note(ticket)
 
             time.sleep(3)
 

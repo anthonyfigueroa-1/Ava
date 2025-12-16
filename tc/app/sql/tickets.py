@@ -9,7 +9,7 @@ def query_open_tickets() -> list:
         with con.cursor() as cur:
             cur.execute("""SELECT id::BIGINT, status 
                         FROM tickets 
-                        WHERE status != 4 OR status != 5 OR status is null""")
+                        WHERE status status != 5 OR status is null""")
             tickets = cur.fetchall()
 
     return tickets
