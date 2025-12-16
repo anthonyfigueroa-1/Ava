@@ -1,6 +1,7 @@
 from app.freshservice.conversations import get_ticket_conversations
 from app.sql.tickets import query_open_tickets, update_ticket_table
 from app.freshservice.tickets import get_one_ticket
+from app.ai.resolution_note import ai_resolution_note
 from app.logs import logs
 
 import time
@@ -25,6 +26,7 @@ def main() -> None:
                 continue
 
             conversation = get_ticket_conversations(ticket)
+            ai_resolution_note(ticket)
             update_ticket_table(ticket, conversation)
 
             time.sleep(3)

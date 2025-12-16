@@ -22,7 +22,8 @@ def update_ticket_table(ticket: dict, conversations: dict | None) -> None:
         with con.cursor() as cur:
             cur.execute("""UPDATE tickets
                         SET conversations = %s, status = %s, priority = %s
-                        WHERE id = %s""",
+                        WHERE id = %s
+                        """,
                         (json.dumps(conversations), status, priority, id)
                         )
     if status in (4, 5):
@@ -38,6 +39,11 @@ def add_resolution_note(ticket: dict, resolution_note: str) -> None:
                         SET resolution_note = %s
                         WHERE id = %s
                         AND resolution_note is NULL
+                        RETURNING id
                         """,
                         (resolution_note, id))
-            
+
+            result = cur.fetchone()
+
+            if not result:
+                logs(f"Failed to update resolution note for ticket ID# {id}.")

@@ -3,16 +3,21 @@ from openai import OpenAI
 
 from app.ai import resolution_note_instructions, resolution_note_json
 from app.freshservice.fs_resolution_note import put_resolution_note
+from app.logs import logs
 
 api_key = os.environ["OPENAIKEY"]
 client = OpenAI(api_key=api_key)
 
-def ai_resolution_note(ticket):
+def ai_resolution_note(ticket: dict) -> str | None:
+    id = ticket.get("id")
+
     ins = [{
         "role": "user",
         "content": json.dumps(ticket, indent=4)
         }]
 
+    logs(f"Generating resolution note for ticket ID# {id}")
+    
     response = client.responses.create(
             model="gpt-4o-mini",
             instructions=resolution_note_instructions,
@@ -25,6 +30,13 @@ def ai_resolution_note(ticket):
             resolution_note = response.output_text
             resolution_note = json.loads(resolution_note)
             resolution_note = resolution_note.get("resolution_note")
-            
+
             if resolution_note:
+                logs(f"Successfully generated resolution note for ticket ID# {id}")
                 put_resolution_note(ticket, str(resolution_note)) 
+
+        else:
+            logs(f"Failed to generate resolution note for ticket ID# {id}")
+            
+    else:
+        logs(f"Failed to generate resolution note for ticket ID# {id}")

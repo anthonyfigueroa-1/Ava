@@ -35,7 +35,7 @@ def put_resolution_note(ticket, resolution_note):
 
         except requests.Timeout:
             if retries > 2:
-                #Will point to postgres function to update table of unsuccessful post
+                logs(f"Timout error posting resolution_note happend 3 times consecutavily for ticket ID# {id}, will ignore posting resolution_note")
                 break
             else:
                 retries += 1
