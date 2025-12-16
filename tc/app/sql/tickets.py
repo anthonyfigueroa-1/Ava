@@ -9,7 +9,7 @@ def query_open_tickets() -> list:
         with con.cursor() as cur:
             cur.execute("""SELECT id::BIGINT, status 
                         FROM tickets 
-                        WHERE status status != 5 OR status is null""")
+                        WHERE status != 5 OR status is null""")
             tickets = cur.fetchall()
 
     return tickets
@@ -26,7 +26,9 @@ def update_ticket_table(ticket: dict, conversations: dict | None) -> None:
                         """,
                         (json.dumps(conversations), status, priority, id)
                         )
-    if status in (4, 5):
+    if status == 4:
+        logs(f"Successfully updated conversations and resolved ticket ID# {id} in database")
+    if status == 5:
         logs(f"Successfully updated conversations and closed ticket ID# {id} in database")
 
 def add_resolution_note(ticket: dict, resolution_note: str) -> None:
