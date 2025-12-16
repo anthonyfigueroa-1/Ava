@@ -3,6 +3,7 @@ import requests, os
 from requests.auth import HTTPBasicAuth
 
 from app.logs import logs
+from app.sql.tickets import add_resolution_note
 
 key = os.environ["AVA"]
 
@@ -29,8 +30,8 @@ def put_resolution_note(ticket, resolution_note):
                 if response.status_code != 201:
                     logs(f"Failed to post resolution_note for ticket ID# {id} with code of {response.status_code}")
                 else:
-                    #Will point to postgres function to update table of successful post
-                    pass
+                    add_resolution_note(ticket, resolution_note)
+                    break 
 
         except requests.Timeout:
             if retries > 2:

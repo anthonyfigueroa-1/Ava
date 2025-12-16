@@ -27,3 +27,17 @@ def update_ticket_table(ticket: dict, conversations: dict | None) -> None:
                         )
     if status in (4, 5):
         logs(f"Successfully updated conversations and closed ticket ID# {id} in database")
+
+def add_resolution_note(ticket: dict, resolution_note: str) -> None:
+    id = ticket.get("id")
+
+    with psycopg.connect(db) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        UPDATE tickets
+                        SET resolution_note = %s
+                        WHERE id = %s
+                        AND resolution_note is NULL
+                        """,
+                        (resolution_note, id))
+            
