@@ -2,6 +2,7 @@ import os, json
 from openai import OpenAI
 
 from app.ai import resolution_note_instructions, resolution_note_json
+from app.freshservice.fs_resolution_note import put_resolution_note
 
 api_key = os.environ["OPENAIKEY"]
 client = OpenAI(api_key=api_key)
@@ -26,4 +27,4 @@ def ai_resolution_note(ticket):
             resolution_note = resolution_note.get("resolution_note")
             
             if resolution_note:
-
+                put_resolution_note(ticket, str(resolution_note)) 
