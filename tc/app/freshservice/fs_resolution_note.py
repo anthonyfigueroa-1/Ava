@@ -9,32 +9,29 @@ key = os.environ["AVA"]
 
 def put_resolution_note(ticket, resolution_note):
     id = ticket.get("id")
-    url = f"https://eastwest.freshservice.com/api/v2/tickets/{id}?include=assets"
+    url = f"https://eastwest.freshservice.com/api/v2/tickets/{id}"
 
     header = {
             "Content-Type": "application/json"
             }
 
     input = {
-            "resolution_notes_html": resolution_note
+            "resolution_notes": resolution_note
             }
 
     retries = 0
 
-    print("going to post note to FS")
     while True:
-        print("test loop")
         try:
             response = requests.put(url=url, headers=header, json=input, auth=HTTPBasicAuth(key, 'x'), timeout=(20,20))
 
-            if response:
-                if response.status_code != 200:
-                    retries += 1
-                    logs(f"Failed to post resolution_note for ticket ID# {id} with code of {response.status_code}")
-                else:
-                    logs(f"Successfully posted resolution_note for ticket ID# {id}")
-                    add_resolution_note(ticket, resolution_note)
-                    break 
+            if response.status_code != 200:
+                retries += 1
+                logs(f"Failed to post resolution_note for ticket ID# {id} with code of {response.status_code}")
+            else:
+                logs(f"Successfully posted resolution_note for ticket ID# {id}")
+                add_resolution_note(ticket, resolution_note)
+                break 
 
         except requests.Timeout:
             if retries > 2:
