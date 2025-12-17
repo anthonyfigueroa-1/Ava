@@ -3,5 +3,5 @@ WORKDIR /app
 COPY ./requirements.txt /app/
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-COPY ./dist/ticket_checker-1.0-py3-none-any.whl /app/
-RUN pip install ticket_checker-1.0-py3-none-any.whl 
+COPY ./dist/ticket_checker-2.0-py3-none-any.whl /app/
+RUN pip install ticket_checker-2.0-py3-none-any.whl 
