@@ -14,8 +14,7 @@ def query_open_tickets() -> list:
 
     return tickets
 
-def query_one_ticket(ticket):
-    id = ticket.get("id")
+def query_one_ticket(id: int):
     with psycopg.connect(db) as con:
         with con.cursor() as cur:
             cur.execute("""SELECT row_to_json(t) FROM tickets

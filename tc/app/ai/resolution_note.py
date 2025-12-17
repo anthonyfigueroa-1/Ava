@@ -18,7 +18,7 @@ def ai_resolution_note(ticket: dict) -> None:
         logs("There appears to already be a note for this ticket, will have Ava reword the note better and repost.")
         content = current_res_note
     else:
-        ticket = query_one_ticket(ticket)
+        ticket = query_one_ticket(id)
         content = json.dumps(ticket, indent=4)
 
     ins = [{
