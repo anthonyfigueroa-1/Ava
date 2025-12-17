@@ -21,7 +21,7 @@ def query_one_ticket(ticket):
             cur.execute("""SELECT row_to_json(t) FROM tickets
                         AS t
                         WHERE id = %s""",
-                        (id))
+                        (id,))
 
             row = cur.fetchone()
 

@@ -26,7 +26,8 @@ def put_resolution_note(ticket, resolution_note):
             response = requests.put(url=url, headers=header, json=input, auth=HTTPBasicAuth(key, 'x'), timeout=(20,20))
 
             if response:
-                if response.status_code != 201:
+                if response.status_code != 200:
+                    retries += 1
                     logs(f"Failed to post resolution_note for ticket ID# {id} with code of {response.status_code}")
                 else:
                     add_resolution_note(ticket, resolution_note)
