@@ -9,7 +9,7 @@ services:
     logging:
       driver: "json-file"
     env_file:
-      - ./ava.env
+      - ./ava/.env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -17,7 +17,7 @@ services:
     command: ["ava"]
     restart: unless-stopped
   tc:
-    image: tc:latest
+    image: tc:2.0
     build: ./tc
     container_name: tc
     working_dir: /app

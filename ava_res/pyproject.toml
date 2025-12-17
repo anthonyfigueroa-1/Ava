@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Ava Resolution Summarizer"
+description = "Checks FreshService tickets to see if any closed tickes require resolution notes and generates the notes using OpenAI API's."
+version = "1.0"
+requires-python = ">=3.10"
+
+[project.scripts]
+tc = "app.main:runner"
