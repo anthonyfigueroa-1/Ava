@@ -5,7 +5,7 @@ from app.logs import logs
 key = os.environ["FSKEY"]
 
 def get_one_ticket(ticket_id: int) -> dict | None:
-    url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}"
+    url = f"https://eastwest.freshservice.com/api/v2/tickets/{ticket_id}?include"
 
     try:
         response = requests.get(url, auth=HTTPBasicAuth(key, "x"), timeout=(5,20))

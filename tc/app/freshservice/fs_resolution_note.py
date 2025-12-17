@@ -9,21 +9,20 @@ key = os.environ["AVA"]
 
 def put_resolution_note(ticket, resolution_note):
     id = ticket.get("id")
-    url = f"https://eastwest.freshservice.com/api/v2/tickets/{id}"
+    url = f"https://eastwest.freshservice.com/api/v2/tickets/{id}?include=assets"
 
     header = {
             "Content-Type": "application/json"
             }
 
     input = {
-            "resolution_notes": resolution_note
+            "resolution_notes_html": resolution_note
             }
 
     retries = 0
 
     while True:
         try:
-
             response = requests.put(url=url, headers=header, json=input, auth=HTTPBasicAuth(key, 'x'), timeout=(20,20))
 
             if response:

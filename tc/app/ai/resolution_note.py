@@ -2,18 +2,28 @@ import os, json
 from openai import OpenAI
 
 from app.ai import resolution_note_instructions, resolution_note_json
+from app.sql.tickets import query_one_ticket
 from app.freshservice.fs_resolution_note import put_resolution_note
 from app.logs import logs
 
 api_key = os.environ["OPENAIKEY"]
 client = OpenAI(api_key=api_key)
 
-def ai_resolution_note(ticket: dict) -> str | None:
+def ai_resolution_note(ticket: dict) -> None:
     id = ticket.get("id")
+
+    current_res_note = check_ticket(ticket)
+
+    if current_res_note:
+        logs("There appears to already be a note for this ticket, will have Ava reword the note better and repost.")
+        content = current_res_note
+    else:
+        ticket = query_one_ticket(ticket)
+        content = json.dumps(ticket, indent=4)
 
     ins = [{
         "role": "user",
-        "content": json.dumps(ticket, indent=4)
+        "content": content 
         }]
 
     logs(f"Ticket ID# {id} is now marked as CLOSED. Generating resolution note for ticket ID# {id}")
@@ -45,3 +55,12 @@ def ai_resolution_note(ticket: dict) -> str | None:
             
     else:
         logs(f"Failed to generate resolution note for ticket ID# {id}")
+
+def check_ticket(ticket) -> str | None:
+    current_res_notes = ticket.get("resolution_notes_html")
+
+    if current_res_notes is None or current_res_notes == "":
+        return
+
+    else:
+        return current_res_notes

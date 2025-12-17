@@ -14,6 +14,22 @@ def query_open_tickets() -> list:
 
     return tickets
 
+def query_one_ticket(ticket):
+    id = ticket.get("id")
+    with psycopg.connect(db) as con:
+        with con.cursor() as cur:
+            cur.execute("""SELECT row_to_json(t) FROM tickets
+                        AS t
+                        WHERE id = %s""",
+                        (id))
+
+            row = cur.fetchone()
+
+    if row:
+        row = row[0]
+
+        return row
+
 def update_ticket_table(ticket: dict, conversations: dict | None) -> None:
     id = ticket.get("id")
     status = ticket.get("status")
