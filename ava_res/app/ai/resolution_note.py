@@ -12,13 +12,21 @@ client = OpenAI(api_key=api_key)
 def ai_resolution_note(ticket: dict) -> None:
     id = ticket.get("id")
 
-    current_res_note = check_ticket(ticket)
+    current_res_note = check_resolution_note_in_fs(ticket)
 
     if current_res_note:
         logs("There appears to already be a note for this ticket, will have Ava reword the note better and repost.")
         content = current_res_note
     else:
         ticket = query_one_ticket(id)
+
+        successful_put = check_if_resolution_note_failed_put(ticket)
+        if successful_put is True:
+            logs(f"Looks like Ava already generated a resolution note for ticket ID# {id}, going to skip generation and try posting resolution note again")
+            resolution_note = ticket.get("resolution_note")
+            put_resolution_note(ticket, resolution_note) 
+            return
+
         content = json.dumps(ticket, indent=4)
 
     ins = [{
@@ -56,7 +64,7 @@ def ai_resolution_note(ticket: dict) -> None:
     else:
         logs(f"Failed to generate resolution note for ticket ID# {id}")
 
-def check_ticket(ticket) -> str | None:
+def check_resolution_note_in_fs(ticket) -> str | None:
     current_res_notes = ticket.get("resolution_notes_html")
 
     if current_res_notes is None or current_res_notes == "":
@@ -64,3 +72,9 @@ def check_ticket(ticket) -> str | None:
 
     else:
         return current_res_notes
+
+def check_if_resolution_note_failed_put(ticket) -> bool | None:
+    put_successful = ticket.get("resolution_note_put")
+
+    if put_successful:
+        return put_successful

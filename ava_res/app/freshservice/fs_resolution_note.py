@@ -34,9 +34,10 @@ def put_resolution_note(ticket, resolution_note):
                 break 
 
         except requests.Timeout:
-            if retries > 2:
-                logs(f"Timout error posting resolution_note happend 3 times consecutavily for ticket ID# {id}, will ignore posting resolution_note")
-                break
-            else:
-                retries += 1
-                logs(f"Timout error posting resolution_note for ticket ID# {id}")
+            retries += 1
+            logs(f"Timout error posting resolution_note for ticket ID# {id}")
+
+        
+        if retries > 2:
+            logs(f"Tried to PUT resolution note for ticket ID# {id} 3 consecutive times and failed, will stop attempting requst.")
+            break

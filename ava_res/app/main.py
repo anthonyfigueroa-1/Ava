@@ -1,5 +1,5 @@
 from app.freshservice.conversations import get_ticket_conversations
-from app.sql.tickets import query_open_tickets, update_ticket_table, query_one_ticket
+from app.sql.tickets import query_closed_tickets, update_ticket_table, query_one_ticket
 from app.freshservice.tickets import get_one_ticket
 from app.ai.resolution_note import ai_resolution_note
 from app.argparse import parse_args
@@ -22,7 +22,7 @@ def main() -> None:
                 logs(f"Could not run test on ticket ID# {arg_id}! Could not find in DB")
                 sys.exit(1) 
         else:
-            tickets = query_open_tickets()
+            tickets = query_closed_tickets()
 
         if not tickets:
             logs("All tickets have either been updating or do not require updating at this time.")
@@ -38,17 +38,7 @@ def main() -> None:
                 id = ticket[0]
 
             ticket = get_one_ticket(id)
-            
-            if not ticket:
-                continue
-
-            conversation = get_ticket_conversations(ticket)
-
-            update_ticket_table(ticket, conversation)
-            
-            status = ticket.get("status")
-            if status == 5:
-                ai_resolution_note(ticket)
+            ai_resolution_note(ticket)
 
             if arg_id:
                 logs(f"Ending test run on ticket ID# {id}")

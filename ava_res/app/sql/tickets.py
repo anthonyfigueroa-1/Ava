@@ -4,12 +4,14 @@ from app.logs import logs
 
 db = os.environ["DB"]
 
-def query_open_tickets() -> list:
+def query_closed_tickets() -> list:
     with psycopg.connect(db) as con:
         with con.cursor() as cur:
             cur.execute("""SELECT id::BIGINT, status 
                         FROM tickets 
-                        WHERE status != 5 OR status is null""")
+                        WHERE status = 5
+                        AND (resolution_note_put is false
+                             OR resolution_note_put is null)""")
             tickets = cur.fetchall()
 
     return tickets
