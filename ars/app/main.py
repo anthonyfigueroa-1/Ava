@@ -1,5 +1,4 @@
-from app.freshservice.conversations import get_ticket_conversations
-from app.sql.tickets import query_closed_tickets, update_ticket_table, query_one_ticket
+from app.sql.tickets import query_closed_tickets, query_one_ticket
 from app.freshservice.tickets import get_one_ticket
 from app.ai.resolution_note import ai_resolution_note
 from app.argparse import parse_args

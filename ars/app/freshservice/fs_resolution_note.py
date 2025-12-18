@@ -19,6 +19,10 @@ def put_resolution_note(ticket, resolution_note):
             "resolution_notes": resolution_note
             }
 
+    put_retries = ticket.get("resolution_note_put")
+    if put_retries is None:
+        put_retries = 0
+
     retries = 0
 
     while True:
@@ -30,7 +34,6 @@ def put_resolution_note(ticket, resolution_note):
                 logs(f"Failed to post resolution_note for ticket ID# {id} with code of {response.status_code}")
             else:
                 logs(f"Successfully posted resolution_note for ticket ID# {id}")
-                add_resolution_note(ticket, resolution_note)
                 break 
 
         except requests.Timeout:
@@ -40,4 +43,7 @@ def put_resolution_note(ticket, resolution_note):
         
         if retries > 2:
             logs(f"Tried to PUT resolution note for ticket ID# {id} 3 consecutive times and failed, will stop attempting requst.")
+            put_retries += 1
             break
+
+    add_resolution_note(ticket, resolution_note, put_retries)

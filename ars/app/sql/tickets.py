@@ -10,7 +10,8 @@ def query_closed_tickets() -> list:
             cur.execute("""SELECT id::BIGINT, status 
                         FROM tickets 
                         WHERE status = 5
-                        AND (resolution_note_put is false
+                        AND ((resolution_note_put != 0 
+                             AND resolution_note_put < 3)
                              OR resolution_note_put is null)""")
             tickets = cur.fetchall()
 
@@ -31,36 +32,19 @@ def query_one_ticket(id: int):
 
         return row
 
-def update_ticket_table(ticket: dict, conversations: dict | None) -> None:
-    id = ticket.get("id")
-    status = ticket.get("status")
-    priority = ticket.get("priority")
-    with psycopg.connect(db) as con:
-        with con.cursor() as cur:
-            cur.execute("""UPDATE tickets
-                        SET conversations = %s, status = %s, priority = %s
-                        WHERE id = %s
-                        """,
-                        (json.dumps(conversations), status, priority, id)
-                        )
-    if status == 4:
-        logs(f"Successfully updated conversations and resolved ticket ID# {id} in database")
-    if status == 5:
-        logs(f"Successfully updated conversations and closed ticket ID# {id} in database")
-
-def add_resolution_note(ticket: dict, resolution_note: str) -> None:
+def add_resolution_note(ticket: dict, resolution_note: str, put: int) -> None:
     id = ticket.get("id")
 
     with psycopg.connect(db) as conn:
         with conn.cursor() as cur:
             cur.execute("""
                         UPDATE tickets
-                        SET resolution_note = %s
+                        SET resolution_note = %s,
+                        resolution_note_put = %s
                         WHERE id = %s
-                        AND resolution_note is NULL
                         RETURNING id
                         """,
-                        (resolution_note, id))
+                        (resolution_note, put, id))
 
             result = cur.fetchone()
 

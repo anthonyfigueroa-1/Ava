@@ -17,7 +17,7 @@ services:
     command: ["ava"]
     restart: unless-stopped
   tc:
-    image: tc:2.0
+    image: tc:latest
     build: ./tc
     container_name: tc
     working_dir: /app
@@ -26,4 +26,15 @@ services:
     env_file:
       - ./tc/.env
     command: ["tc"]
+    restart: unless-stopped
+  ars:
+    image: ars:latest
+    build: ./ars
+    container_name: ars
+    working_dir: /app
+    environment:
+      PYTHONUNBUFFERED: 1
+    env_file:
+      - ./ars/.env
+    command: ["rs"]
     restart: unless-stopped
