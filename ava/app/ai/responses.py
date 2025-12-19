@@ -112,7 +112,7 @@ def first_response(ticket):
     logs(f"Token usage for response back: {tokens}")
 
     response = client.responses.create(
-        model="gpt-5",
+        model="gpt-5.2-chat-latest",
         instructions=instructions,
         input=input,
         text=text,
