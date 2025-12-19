@@ -1,7 +1,8 @@
-import re, openai, os, json
+import re, openai, os 
 
 from app.regex import get_images
 from app.sql.tickets_db import add_metadata
+from app.ai import tap_instructions, tap_text
 
 key = os.environ["OPENAIKEY"]
 client = openai.OpenAI(api_key=key)
@@ -67,40 +68,19 @@ def get_attachment_urls(attachments: list[dict], content: list[dict]):
                     })
 
 def get_ai_attachment_response(content):
-    text = {
-        "format": {
-            "type": "json_schema",
-            "name": "response",
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "metadata": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "description": "Detailed metadata of each attachment that was successfully uploaded to OpenAI for processing."
-                            }
-                        },
-                    },
-                "required": ["metadata"],
-                "additionalProperties": False
-                },
-            "strict": True
-            }
-        }
     ins = [
-            {
-                "role": "user",
-                "content": content
-                }
-            ]
+        {
+            "role": "user",
+            "content": content
+            }
+        ]
 
     try:
         response = client.responses.create(
-                model="gpt-5.1",
-                instructions="Convert input_files and input_images into detailed metadata as it relates to the current ticket.",
+                model="gpt-5.1-mini",
+                instructions=tap_instructions,
                 input=ins,
-                text=text
+                text=tap_text
                 )
 
         if response:

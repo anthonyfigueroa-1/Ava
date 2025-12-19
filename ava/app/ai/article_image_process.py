@@ -3,37 +3,11 @@ from openai import BadRequestError, OpenAI
 
 from app.sql.solution_articles_db import  query_article, update_img_metadata
 from app.logs import logs
+from app.ai import aap_instructions, aap_text
 
 key = os.environ["OPENAIKEY"]
 
 client = OpenAI(api_key=key)
-
-
-text = {
-        "format": {
-            "type": "json_schema",
-            "strict": True,
-            "name": "response",
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "image_metadata": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "description": "Metadata for each individual image given",
-                            }
-                        }
-                    },
-                "required": ["image_metadata"],
-                "additionalProperties": False
-                },
-            },
-        }
-
-image_instructions="""
-From the text being given, go ahead and generate detailed metadata for each individual image being given, as it relates to the text."
-"""
 
 def process_photos(article):
     id = article.get("id")
@@ -64,10 +38,10 @@ def process_photos(article):
 
     try:
         response = client.responses.create(
-                model="gpt-5",
+               model="gpt-5.1-mini",
                 input=input,
-                text=text,
-                instructions=image_instructions,
+                text=aap_text,
+                instructions=aap_instructions,
                 timeout=200
                 )
 

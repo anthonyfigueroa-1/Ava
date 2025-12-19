@@ -1,42 +1,12 @@
 from app.ai.ticket_attachment_process import ticket_attachments_process
 from app.freshservice.conversations_api import get_conversations
-from openai import OpenAI, BadRequestError
 import os, json, tiktoken
 
 from app.logs import logs
-from app.regex import get_images
 from app.sql.tickets_db import query_ticket_response, add_ai_response, query_ticket
-from app.ai.query_db_tickets import ai_query_tickets
-from app.ai.query_db_articles import ai_articles
 from app.ai.conversations import convo_user_id_convert
-from app.ai import instructions
+from app.ai import instructions, ava_text
 from app.ai.router import query_db_router
-
-next_step = "If 'NO AI NEEDED' and agent responded back to ticket, generate what the follow up email would be to the user of ticket and what other note you would leave the agent in here as well."
-
-text = {
-        "format": {
-            "type": "json_schema",
-            "strict": True,
-            "name": "response",
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "email": {"type": "string"},
-                    "note": {
-                        "type": ["string", "null"],
-                        "description": "Note for ticket, or null if note is not needed"
-                        },
-                    "next_steps": {
-                        "type": ["string", "null"],
-                        "description": next_step
-                        }
-                    },
-                "required": ["email", "note", "next_steps"],
-                "additionalProperties": False
-                },
-            },
-        }
 
 encoding = tiktoken.encoding_for_model("gpt-5")
 
@@ -62,10 +32,6 @@ def first_response(ticket):
 
     ticket_neighbors = relevant_info.get("tickets")
     related_articles = relevant_info.get("articles")
-
-    #Will use AI to get most related solution articles and tickets found in DB
-    #related_articles = ai_articles(ticket_string)
-    #ticket_neighbors = ai_query_tickets(ticket_string)
 
     #Getting convo's one more time to ensure that Ava does not respond after agent has already messaged back on ticket.
     get_conversations(id)
@@ -115,7 +81,7 @@ def first_response(ticket):
         model="gpt-5.2-chat-latest",
         instructions=instructions,
         input=input,
-        text=text,
+        text=ava_text,
         timeout=100
         )
 

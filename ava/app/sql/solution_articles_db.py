@@ -62,6 +62,7 @@ def ai_query_articles_slim(keywords: list[str]) -> list[dict] | None:
 
     with psycopg.connect(db) as conn:
         with conn.cursor() as cur:
+            #Maybe add in timestamp of when article was made
             cur.execute("""
                         WITH kw as (
                             SELECT unnest(%s::text[]) as keyword

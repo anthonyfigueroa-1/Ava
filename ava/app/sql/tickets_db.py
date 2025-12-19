@@ -271,6 +271,7 @@ def query_ticket_response(id):
     return data
 
 def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str) -> list | None:
+    #Add in department and date ticket created into this query
     query = f"""
     WITH keywords AS (
             SELECT unnest(%s::text[]) as keyword
