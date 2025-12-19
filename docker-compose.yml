@@ -10,8 +10,6 @@ services:
       driver: "json-file"
     env_file:
       - ./ava/.env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - "./instructions:/app/instructions"
     command: ["ava"]
