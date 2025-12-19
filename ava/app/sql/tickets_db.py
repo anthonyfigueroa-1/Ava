@@ -280,18 +280,22 @@ def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str) ->
                     t.requester_name,
                     t.requester_email,
                     regexp_replace(t.subject, E'[\\r\\n]+', ' ', 'g') as subject_clean,
-                    regexp_replace(t.description, E'[\\r\\n]+', ' ', 'g') as description_clean
+                    regexp_replace(t.description, E'[\\r\\n]+', ' ', 'g') as description_clean,
+                    t.resolution_note
             FROM tickets t),
     matches as (
             SELECT c.*,
-                    SUM(word_similarity(c.description_clean, keyword) + word_similarity(c.subject_clean, keyword)) as score
+                    SUM(word_similarity(c.description_clean, keyword) 
+                        + word_similarity(c.subject_clean, keyword) 
+                        + word_similarity(c.resolution_note, keyword)) as score
                 FROM cleaned c
                 LEFT JOIN LATERAL (
                     SELECT keyword FROM keywords
                     WHERE c.description_clean ILIKE keyword
                     OR c.subject_clean ILIKE keyword
+                    OR c.resolution_note ILIKE keyword
                     ) match_table ON TRUE
-                GROUP BY c.id, c.requester_name, c.requester_email, c.subject_clean, c.description_clean
+                GROUP BY c.id, c.requester_name, c.requester_email, c.subject_clean, c.description_clean, c.resolution_note
                 )
                 SELECT row_to_json(t)
                 FROM matches
@@ -299,7 +303,7 @@ def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str) ->
                 WHERE id != %s AND score IS NOT null
                 ORDER BY (CASE WHEN requester_email = %s THEN 1 ELSE 0 END) DESC,
                 COALESCE(score, 0) DESC
-                LIMIT 30;
+                LIMIT 40;
     """
 
     keywords = [f"%{keyword}%" for keyword in keywords]
@@ -319,7 +323,7 @@ def query_tickets_ai(ids: list[int]) -> list | None:
     clause = " OR ".join(f"id = %s" for _ in ids)
     query = f"""SELECT row_to_json(t)
                         FROM (
-                            SELECT id, requester_name, requester_email, department, subject, raw_description, conversations
+                            SELECT id, requester_name, requester_email, department, subject, raw_description, conversations, resolution_note
                             FROM tickets
                             WHERE ({clause})
                             )

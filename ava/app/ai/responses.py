@@ -98,7 +98,7 @@ def first_response(ticket):
                 "articles": related_articles,
                 },
             "user_id_ref": {
-                "description": "Refernce JSON of user_id's mentioned to assist with tying user_id to a name, if applicable.",
+                "description": "Refrence JSON of user_id's mentioned to assist with tying user_id to a name, if applicable.",
                 "users:": users_in_convo,
                 },
             }
