@@ -253,11 +253,10 @@ def query_ticket(id):
 
 def query_ticket_response(id):
     with psycopg.connect(tickets_db) as conn:
-        #add metadata
         with conn.cursor() as cur:
             cur.execute("""SELECT row_to_json(t)
                         FROM (
-                            SELECT id, priority, requester_name, requester_email, requester_vip, department, subject, raw_description, service_request, conversations
+                            SELECT id, priority, requester_name, requester_email, requester_vip, department, subject, raw_description, service_request, conversations, metadata
                             FROM tickets
                             WHERE id = %s
                             ) AS t""", (id,))
@@ -272,7 +271,6 @@ def query_ticket_response(id):
     return data
 
 def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str) -> list | None:
-    #Add in department and date ticket created into this query
     query = f"""
     WITH keywords AS (
             SELECT unnest(%s::text[]) as keyword
@@ -283,7 +281,9 @@ def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str) ->
                     t.requester_email,
                     regexp_replace(t.subject, E'[\\r\\n]+', ' ', 'g') as subject_clean,
                     regexp_replace(t.description, E'[\\r\\n]+', ' ', 'g') as description_clean,
-                    t.resolution_note
+                    t.resolution_note,
+                    t.department,
+                    t.ticket_created
             FROM tickets t),
     matches as (
             SELECT c.*,
@@ -297,7 +297,7 @@ def query_tickets_ai_slim(keywords: list[str], id: int, requester_email: str) ->
                     OR c.subject_clean ILIKE keyword
                     OR c.resolution_note ILIKE keyword
                     ) match_table ON TRUE
-                GROUP BY c.id, c.requester_name, c.requester_email, c.subject_clean, c.description_clean, c.resolution_note
+                GROUP BY c.id, c.requester_name, c.requester_email, c.subject_clean, c.description_clean, c.resolution_note, c.department, c.ticket_created
                 )
                 SELECT row_to_json(t)
                 FROM matches
