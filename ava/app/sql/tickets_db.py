@@ -253,6 +253,7 @@ def query_ticket(id):
 
 def query_ticket_response(id):
     with psycopg.connect(tickets_db) as conn:
+        #add metadata
         with conn.cursor() as cur:
             cur.execute("""SELECT row_to_json(t)
                         FROM (
