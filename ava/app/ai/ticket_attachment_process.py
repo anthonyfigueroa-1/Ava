@@ -8,6 +8,7 @@ key = os.environ["OPENAIKEY"]
 client = openai.OpenAI(api_key=key)
 
 def ticket_attachments_process(ticket):
+    print("grabbing imagse")
     id = ticket.get("id")
     ticket_json = ticket.get("json")
     attachments = (ticket_json.get("attachments"))
@@ -42,6 +43,7 @@ def ticket_attachments_process(ticket):
 def seperate_images(raw_description, content):
     images = get_images(raw_description)
     if images:
+        print("got images from desc")
         for image in images:
             ai_json = {
                         "type": "input_image",
@@ -77,11 +79,12 @@ def get_ai_attachment_response(content):
 
     try:
         response = client.responses.create(
-                model="gpt-5.1-mini",
+                model="gpt-5.2",
                 instructions=tap_instructions,
                 input=ins,
                 text=tap_text
                 )
+        print(response)
 
         if response:
             return response

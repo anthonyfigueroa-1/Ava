@@ -38,7 +38,7 @@ def process_photos(article):
 
     try:
         response = client.responses.create(
-               model="gpt-5.1-mini",
+               model="gpt-5.2",
                 input=input,
                 text=aap_text,
                 instructions=aap_instructions,

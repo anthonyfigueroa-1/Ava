@@ -1,3 +1,4 @@
+from openai import OpenAI
 from app.ai.ticket_attachment_process import ticket_attachments_process
 from app.freshservice.conversations_api import get_conversations
 import os, json, tiktoken
