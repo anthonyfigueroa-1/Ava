@@ -29,7 +29,7 @@ def main() -> None:
 
             update_ticket_table(ticket, conversation)
             
-            time.sleep(1)
+            time.sleep(1.5)
 
 def runner() -> None:
     try:
