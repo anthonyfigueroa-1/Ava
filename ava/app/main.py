@@ -22,7 +22,7 @@ def main():
 
     if updateai is True:
         logs("Login to update AI instructions")
-        instructions = get_sp_instructions()
+        get_sp_instructions()
         sys.exit(0)
 
     #functions to create the database and the tables for the databases

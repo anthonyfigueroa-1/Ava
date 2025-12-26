@@ -93,6 +93,7 @@ Query the DB if **any** of the following is true:
 7. **High-impact / urgent** language (production down, cannot work, security issue, widespread).
 
 Do **not** query when:
+Avoid not querying Teams booking tickets!
 
 * The ticket is a simple informational request with a clear answer already contained in the ticket.
 * The ticket is fully resolved with an explicit solution documented in the provided text.
@@ -542,6 +543,18 @@ Select tickets that plausibly help with any of the following:
 * Same **failure mode / symptom** (e.g., login loop, 403, VPN disconnect, mailbox access, printer offline).
 * Matching **identifiers** (booking/reservation IDs, third-party ticket IDs, hostnames, domains).
 * Similar **timeline pattern** (recurring or ongoing outage, intermittent behavior).
+
+**Microsoft Bookings / Teams booking tickets (high priority):**
+
+* Tickets generated from **Microsoft Bookings / Teams meeting notifications** (e.g., subjects containing "New booking", "Bookings", "Join your appointment").
+* Treat these tickets as **secondary or child tickets**.
+* Actively attempt to locate the **primary or parent ticket** the booking relates to (e.g., onboarding, offboarding, access request, separation).
+* Prefer tickets that:
+
+  * Share the same requester or subject person name.
+  * Match the same department/property.
+  * Reference onboarding/offboarding, separation, equipment return, or access removal.
+  * Occur within a close time window to the booking notification.
 
 ### Medium signals (include if helpful)
 
