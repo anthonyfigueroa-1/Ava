@@ -3,7 +3,6 @@ from redis import RedisError
 
 from app.webhook.auth import check_token
 from app.freshservice.tickets_api import get_ticket
-from app.freshservice.convo_api import get_convo
 from app.redis.redis_client import send_queue
 from app.logs import logs
 from app.redis import redis
@@ -22,7 +21,6 @@ def new_ticket(payload: dict, _: None = Depends(check_token)) -> dict:
 def ticket_response(payload: dict, _: None = Depends(check_token)) -> dict:
     id = payload.get("id")
     ticket = get_ticket(id)
-    convo = get_convo(id)
     logs(f"Recieved updated ticket ID# {id}")
     send_queue(ticket, "ticket_update")
     return {"Successfully recieved ticket response from": id}
